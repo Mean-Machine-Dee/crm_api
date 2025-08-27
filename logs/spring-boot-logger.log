@@ -1,0 +1,30 @@
+2024-09-11 12:59:32,621 INFO o.s.b.StartupInfoLogger [main] Starting ApiApplicationTests using Java 17.0.12 on MeanMachines-Mac-mini.local with PID 10645 (started by meanmachine in /Users/meanmachine/Garage/Job/Rahisibet/crm_api)
+2024-09-11 12:59:32,622 INFO o.s.b.SpringApplication [main] No active profile set, falling back to 1 default profile: "default"
+2024-09-11 12:59:32,626 INFO o.h.v.i.u.Version [background-preinit] HV000001: Hibernate Validator 6.2.5.Final
+2024-09-11 12:59:32,862 INFO o.s.d.r.c.RepositoryConfigurationDelegate [main] Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-11 12:59:32,890 INFO o.s.d.r.c.RepositoryConfigurationDelegate [main] Finished Spring Data repository scanning in 24 ms. Found 5 JPA repository interfaces.
+2024-09-11 12:59:32,891 INFO o.s.d.r.c.RepositoryConfigurationDelegate [main] Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2024-09-11 12:59:32,898 INFO o.s.d.r.c.RepositoryConfigurationDelegate [main] Finished Spring Data repository scanning in 6 ms. Found 5 JPA repository interfaces.
+2024-09-11 12:59:33,263 INFO o.h.j.i.u.LogHelper [main] HHH000204: Processing PersistenceUnitInfo [name: apiDb]
+2024-09-11 12:59:33,286 INFO o.h.Version [main] HHH000412: Hibernate ORM core version 5.6.14.Final
+2024-09-11 12:59:33,360 INFO o.h.a.c.r.j.JavaReflectionManager [main] HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2024-09-11 12:59:33,415 INFO c.z.h.HikariDataSource [main] HikariPool-1 - Starting...
+2024-09-11 12:59:36,269 INFO c.z.h.HikariDataSource [main] HikariPool-1 - Start completed.
+2024-09-11 12:59:36,297 INFO o.h.d.Dialect [main] HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2024-09-11 12:59:36,583 INFO o.h.e.t.j.p.i.JtaPlatformInitiator [main] HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2024-09-11 12:59:36,587 INFO o.s.o.j.AbstractEntityManagerFactoryBean [main] Initialized JPA EntityManagerFactory for persistence unit 'apiDb'
+2024-09-11 12:59:36,593 INFO o.h.j.i.u.LogHelper [main] HHH000204: Processing PersistenceUnitInfo [name: crm]
+2024-09-11 12:59:36,595 INFO c.z.h.HikariDataSource [main] HikariPool-2 - Starting...
+2024-09-11 12:59:38,522 INFO c.z.h.HikariDataSource [main] HikariPool-2 - Start completed.
+2024-09-11 12:59:38,525 INFO o.h.d.Dialect [main] HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2024-09-11 12:59:38,637 INFO o.h.e.t.j.p.i.JtaPlatformInitiator [main] HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2024-09-11 12:59:38,637 INFO o.s.o.j.AbstractEntityManagerFactoryBean [main] Initialized JPA EntityManagerFactory for persistence unit 'crm'
+2024-09-11 12:59:39,113 INFO o.s.s.w.DefaultSecurityFilterChain [main] Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@3407ded1, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@63af52a6, org.springframework.security.web.context.SecurityContextPersistenceFilter@34ff08c6, org.springframework.security.web.header.HeaderWriterFilter@3a9040f0, org.springframework.web.filter.CorsFilter@10ae002e, org.springframework.security.web.authentication.logout.LogoutFilter@25b402ea, com.crm.api.security.jwt.AuthTokenFilter@54b35809, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@79b0956e, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@21d48c40, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@573f2e67, org.springframework.security.web.session.SessionManagementFilter@78e7b83, org.springframework.security.web.access.ExceptionTranslationFilter@fdf029a, org.springframework.security.web.access.intercept.AuthorizationFilter@61f08aa9]
+2024-09-11 12:59:39,214 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [main] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2024-09-11 12:59:39,489 INFO o.s.b.StartupInfoLogger [main] Started ApiApplicationTests in 12.058 seconds (JVM running for 12.446)
+2024-09-11 12:59:39,589 INFO o.s.o.j.AbstractEntityManagerFactoryBean [SpringApplicationShutdownHook] Closing JPA EntityManagerFactory for persistence unit 'crm'
+2024-09-11 12:59:39,589 INFO o.s.o.j.AbstractEntityManagerFactoryBean [SpringApplicationShutdownHook] Closing JPA EntityManagerFactory for persistence unit 'apiDb'
+2024-09-11 12:59:39,590 INFO c.z.h.HikariDataSource [SpringApplicationShutdownHook] HikariPool-1 - Shutdown initiated...
+2024-09-11 12:59:40,805 INFO c.z.h.HikariDataSource [SpringApplicationShutdownHook] HikariPool-1 - Shutdown completed.
+2024-09-11 12:59:40,807 INFO c.z.h.HikariDataSource [SpringApplicationShutdownHook] HikariPool-2 - Shutdown initiated...
+2024-09-11 12:59:41,407 INFO c.z.h.HikariDataSource [SpringApplicationShutdownHook] HikariPool-2 - Shutdown completed.

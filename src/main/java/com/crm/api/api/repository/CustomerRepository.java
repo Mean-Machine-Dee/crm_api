@@ -1,0 +1,45 @@
+package com.crm.api.api.repository;
+
+import com.crm.api.api.models.Customer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.sql.Timestamp;
+import java.util.List;
+
+
+@Repository
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
+
+    @Query(value="SELECT * FROM users WHERE id = ?1",nativeQuery = true)
+    Customer getByUserId(long id);
+
+    @Query(value = "SELECT * FROM users WHERE verified = 1 ORDER BY created_at DESC", nativeQuery = true)
+    Page<Customer> getCustomers(Pageable pageable);
+
+
+    Page<Customer> findByPhoneLike(String phone,Pageable pageable);
+
+//    @Query(value = "SELECT * FROM users ORDER BY created_at DESC LIMIT 10", nativeQuery = true)
+//    List<Customer> getCustomers();
+
+    Customer findById(long id);
+    @Query(value = "SELECT SUM(id) FROM users WHERE created_at BETWEEN ?1 AND ?2", nativeQuery = true)
+    Integer findTodaysSignUps(Timestamp timestamp, Timestamp stop);
+
+    Customer findByPhone(String phone);
+
+    @Query(value = "SELECT phone FROM users WHERE id IN ?1 ORDER BY created_at DESC", nativeQuery = true)
+    List<String> findByIds(List<Long> commonElems);
+
+    @Query(value = "SELECT * FROM users WHERE verified = 1 AND iso = ?1 ORDER BY created_at DESC", nativeQuery = true)
+    Page<Customer> getLocalizedCustomers(String iso,Pageable pageable);
+
+    @Query(value = "SELECT * FROM users WHERE id = ?1", nativeQuery = true)
+    Customer findCustomerId(long id);
+
+    List<Customer> findByCreatedAtBetween(Timestamp start, Timestamp from);
+}

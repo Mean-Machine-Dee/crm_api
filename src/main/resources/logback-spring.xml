@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- the folder in which the SDK logs will be stored -->
+
+    <property name="CRM_LOGGER" value="${HOME}/staging/crm" />
+    <!-- TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF -->
+    <property name="MTS_SDK_LOG_LEVEL" value="info" />
+
+    <!-- the execution log file appender configuration -->
+    <appender name="SdkExecutionLogFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- the main/current execution log file -->
+        <file>${CRM_LOGGER}/payments.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover
+            Once any of the below condition met, it will change the file name as below and compressed it. -->
+            <fileNamePattern>${CRM_LOGGER}/crm-sdk-%d{yyyy-MM-dd}_%i.log.zip</fileNamePattern>
+            <!-- or whenever the file size reaches 10MB -->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!-- keep 7 days' worth of history -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d [%-5level] [%thread] [%logger{32}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+
+
+    <!-- the console log appender -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d [%-5level] [%thread] [%logger{32}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- execution log config assigned to the execution logger -->
+    <logger name="com.sportradar.mts.sdk" level="${MTS_SDK_LOG_LEVEL}">
+        <appender-ref ref="SdkExecutionLogFileAppender" />
+    </logger>
+
+    <root level="error">
+        <appender-ref ref="SdkExecutionLogFileAppender"/>
+    </root>
+
+    <root level="debug">
+        <appender-ref ref="SdkExecutionLogFileAppender"/>
+    </root>
+    <root level="info">
+        <appender-ref ref="SdkExecutionLogFileAppender"/>
+    </root>
+
+    <!-- all the debug logs will be printed in the console -->
+    <!--    <root level="debug">-->
+    <!--        <appender-ref ref="STDOUT" />-->
+    <!--    </root>-->
+</configuration>
