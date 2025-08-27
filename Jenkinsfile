@@ -22,7 +22,7 @@ pipeline{
 
         stage('Prepare Environment'){
             steps{
-                git branch:'main', credentialsId: 'GithubToken', url:'https://github.com/Mean-Machine-Dee/crm-api.git'
+                git branch:'main', credentialsId: 'GithubToken', url:'https://github.com/Mean-Machine-Dee/crm_api.git'
             }
         }
 
