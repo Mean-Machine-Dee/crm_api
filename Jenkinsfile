@@ -49,7 +49,7 @@ pipeline{
 whoami
 uptime
 cd /var/www/pipelines/crm/api
-docker compose pull crm-api
+//docker compose pull crm-api
 END
                     """
                 }
