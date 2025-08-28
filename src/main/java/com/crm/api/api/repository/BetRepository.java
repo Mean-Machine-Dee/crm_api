@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
-import java.util.Date;
 import java.util.List;
 
 
@@ -16,6 +15,12 @@ import java.util.List;
 public interface BetRepository extends JpaRepository<Bet, Long> {
     @Query(value="SELECT * FROM bets WHERE created_at BETWEEN ?1 AND ?2", nativeQuery = true)
     List<Bet> getBetsByDate(Timestamp burundiTime,Timestamp stop);
+
+
+
+    @Query(value="SELECT * FROM bets WHERE created_at BETWEEN ?1 AND ?2", nativeQuery = true)
+    Page<Bet> getPaginatedBetsByDate(Timestamp burundiTime,Timestamp stop, Pageable pageable);
+
 
     @Query(value="SELECT * FROM bets WHERE won = 1 AND created_at BETWEEN ?1 AND ?2 LIMIT 1000", nativeQuery = true)
     List<Bet> getWonBetsByDate(Timestamp burundiTime,Timestamp stop);
@@ -65,8 +70,8 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     Page<Bet> getPaginatedJackpotBets(String jackpot, Pageable pageable);
 
 
-    @Query(value = "SELECT * FROM bets WHERE created_at BETWEEN ?1 AND ?2", nativeQuery = true)
-    List<Bet> findBetsWithinAWeek(Timestamp now, Timestamp dt);
+    @Query(value = "SELECT * FROM bets WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
+    List<Bet> findBetsWithinAWeek(String country,Timestamp now, Timestamp dt);
 
     @Query(value = "SELECT * FROM bets WHERE user_id in ?1", nativeQuery = true)
     List<Bet> findByIds(List<Long> customerIds);

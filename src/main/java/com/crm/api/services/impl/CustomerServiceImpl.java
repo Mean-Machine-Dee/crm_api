@@ -170,7 +170,7 @@ public class CustomerServiceImpl implements CustomerService {
                         .id(customer.getId())
                         .bonus(account.getBonus())
                         .country(customer.getIso())
-                        .joined(String.valueOf(customer.getCreated_at()))
+                        .joined(String.valueOf(customer.getCreatedAt()))
                         .build();
             }).collect(Collectors.toList());
             Map<String, Object> response = appUtils.dataFormatter(data, customers.getNumber(),
@@ -240,7 +240,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .verified(customer.isVerified())
                     .bonus(account.getBonus())
                     .country(customer.getIso())
-                    .joined(String.valueOf(customer.getCreated_at()))
+                    .joined(String.valueOf(customer.getCreatedAt()))
                     .build();
             response.put("active", active);
             response.put("lost", lost);
@@ -276,14 +276,18 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public GlobalResponse getDeposits(int id, Pageable pageable, String type) {
-        String telco = "Lumitel";
-        if (type.equals("crm")) {
-            telco = "crm";
-        }
+
+
         Customer customer = customerRepository.getByUserId(id);
         if (customer != null) {
-            logger.info("Telco is {} -- {} customer {}", telco, type, customer.getPhone());
-            Page<Deposit> deposits = depositRepository.userPagedDeposits(customer.getId(), telco, pageable);
+            logger.info("Telco is {}  customer {}", type, customer.getPhone());
+            Page<Deposit> deposits = null;
+            if(type.equalsIgnoreCase("deposits")){
+                deposits = depositRepository.userDepositsPaged(customer.getId(), pageable);
+            }else{
+                deposits = depositRepository.userPagedDeposits(customer.getId(),"crm", pageable);
+            }
+
             if (!deposits.getContent().isEmpty()) {
                 Map<String, Object> response = appUtils.dataFormatter(deposits.getContent(), deposits.getNumber(),
                         deposits.getTotalElements(),
@@ -517,7 +521,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public GlobalResponse getPlayers(String category, HttpServletResponse response) {
+    public GlobalResponse getPlayers(String category,String country, HttpServletResponse response) {
         //TODO:: make this to be downloadable via csv file
         Timestamp now = appUtils.getBurundiTime();
        Timestamp to = appUtils.minusDays(20);
@@ -526,7 +530,7 @@ public class CustomerServiceImpl implements CustomerService {
         //VIP users
         //Dormant Users
         logger.info("search from  {} -- {}",now,to);
-        List<Bet> betList = betRepository.findBetsWithinAWeek(now,to);
+        List<Bet> betList = betRepository.findBetsWithinAWeek(country,now,to);
         logger.info("betList is {}", betList.size());
         Map<Long, Double> collected = betList.stream().collect(Collectors.groupingBy(Bet::getUserId, Collectors.summingDouble(Bet::getAmount)));
         List<Long> vip = new ArrayList<>();
@@ -608,22 +612,96 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public GlobalResponse getRate(String from, String to) {
+    public GlobalResponse getRate(String from, String to,String iso) {
         Timestamp start = appUtils.formatStringToTimestamp(from);
         Timestamp finish = appUtils.formatStringToTimestamp(to);
-        List<Customer> customers = customerRepository.findByCreatedAtBetween(start,finish);
+        List<Customer> customers = customerRepository.findByCreatedAtRange(iso,start,finish);
         List<Long> customerIds = customers.stream().map(Customer::getId).collect(Collectors.toList());
         List<Deposit> deposits = depositRepository.getByIds(customerIds);
         Map<Long, List<Deposit>> collected = deposits.stream().collect(Collectors.groupingBy(Deposit::getUser_id));
+        Double amountDeposited = deposits.stream().mapToDouble(Deposit::getAmount).sum();
         int rate = customerIds.size() / collected.size() * 100;
         //List<Bet> bets = betRepository.findByIds(customerIds);
-        Map<String,Integer> response = new HashMap<>();
+        Map<String,Object> response = new HashMap<>();
         response.put("customers", customers.size());
         response.put("deposits", collected.size());
+//        response.put("depositPerUser",collected);
+        response.put("deposited",amountDeposited);
         response.put("conversion", rate);
         return new GlobalResponse(response, true, false, "Conversion rate");
 
     }
+
+    @Override
+    public GlobalResponse getBetsPerSport(String id, String from, String to, Pageable pageable) {
+        String sport = getSportFromId(id);
+
+            Timestamp start = appUtils.formatStringToTimestamp(from);
+            Timestamp finish = appUtils.formatStringToTimestamp(to);
+            logger.info("Get {} {} {} {} ", id, sport,start,finish);
+            Page<Bet> bets = betRepository.getPaginatedBetsByDate(start,finish, pageable);
+            List<Bet> betsData = new ArrayList<>();
+            Map<String, Object> response = new HashMap<>();
+            logger.info("Filtering.... size is {}",bets.getContent().size());
+            if(!bets.isEmpty()){
+                            for (Bet bet: bets.getContent()){
+                logger.info("Inside");
+                List<Picks> matched = bet.getPicks().stream().filter(pick -> pick.getSport().equalsIgnoreCase(sport)).collect(Collectors.toList());
+                logger.info("finished");
+                if(!matched.isEmpty()){
+                    betsData.add(bet);
+                }
+                }
+
+                response.put("data", betsData);
+                response.put("currentPage", bets.getNumber());
+                response.put("totalItems", bets.getTotalElements());
+                response.put("totalPages", bets.getTotalPages());
+                response.put("nextPage", bets.getNumber()+ 1);
+                return new GlobalResponse(response,true,false,"Bets per sport");
+            }else{
+                return new GlobalResponse(null,false,true,"No Bets per sport");
+            }
+
+
+        }
+
+    private String getSportFromId(String id) {
+        String name;
+         switch (id){
+             case "2":
+                name = "Basketball";
+                break;
+            case "3":
+                name = "Baseball";
+                break;
+
+            case "4":
+                name = "Ice Hockey";
+                break;
+
+            case "5":
+                name = "Tennis";
+                break;
+            case "6":
+                name = "Handball";
+                break;
+            case "10":
+                name = "Boxing";
+                break;
+            case "21":
+                name = "Cricket";
+                break;
+            case "12":
+                name = "Rugby";
+                break;
+             default:
+                 name = "Football";
+        }
+
+        return name;
+    }
+
 
     private void topUpBonus(Account account, Integer amount) {
        Timestamp now = new Timestamp(System.currentTimeMillis());

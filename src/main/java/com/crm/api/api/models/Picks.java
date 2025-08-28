@@ -32,6 +32,7 @@ public class Picks {
     private Timestamp deleted_at;
     private String specifier;
     private String pick_name;
+    private String sport;
 
 
 

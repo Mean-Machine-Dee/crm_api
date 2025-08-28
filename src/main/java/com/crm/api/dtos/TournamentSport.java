@@ -5,5 +5,6 @@ public interface TournamentSport {
         Long getId();
         String getName();
         Long getFeatured();
+        Integer getPriority();
 
 }

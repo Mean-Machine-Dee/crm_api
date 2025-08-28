@@ -77,6 +77,8 @@ public interface BookieService {
 
     GlobalResponse removeGame(long id);
 
+    GlobalResponse setLiveTournament(long id, int priority);
+
 
 //    GlobalResponse searchBet(int code);
 }

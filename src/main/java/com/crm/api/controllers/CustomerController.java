@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.server.PathParam;
 
 import java.security.Principal;
 
@@ -166,18 +167,25 @@ public class CustomerController {
     }
 
     @GetMapping("players")
-    public GlobalResponse players(@RequestParam(name = "category") String category, HttpServletResponse response){
-        return customerService.getPlayers(category, response);
+    public GlobalResponse players(@RequestParam(name = "category") String category,@RequestParam(name = "country") String country, HttpServletResponse response){
+        return customerService.getPlayers(category,country, response);
     }
 
     @GetMapping("conversion/rate")
-    public GlobalResponse getConversion(@RequestParam(name = "from") String from, @RequestParam(name = "to") String to){
-        return customerService.getRate(from,to);
+    public GlobalResponse getConversion(@RequestParam(name = "from") String from, @RequestParam(name = "to") String to, @RequestParam(name = "country") String country){
+        return customerService.getRate(from,to,country);
     }
 
     @PostMapping("award/bonus")
     public GlobalResponse bonusWinners(@RequestBody BonusWinnersRequest winnersRequest){
         return customerService.awardBonus(winnersRequest);
+    }
+
+    @GetMapping("bets/sport/{id}")
+    public GlobalResponse betsPerSport(@PathVariable(name = "id") String id,@RequestParam(name = "page") int page, @RequestParam(name = "size") int size,
+                                       @RequestParam(name = "from") String from, @RequestParam(name = "to") String to){
+        Pageable pageable = PageRequest.of(page,size);
+        return customerService.getBetsPerSport(id,from,to,pageable);
     }
 
 }

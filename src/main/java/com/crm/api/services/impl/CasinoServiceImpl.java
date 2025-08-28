@@ -141,7 +141,7 @@ public class CasinoServiceImpl implements CasinoService {
         return jetXBets.getContent().stream()
                 .map(jetx -> new CasinoDTO("JetX",
                         jetx.getGameName(), jetx.getAmount(),
-                        jetx.getAmountWon()/100, jetx.getStatus(), jetx.getWon(),
+                        jetx.getAmountWon(), jetx.getStatus(), jetx.getWon(),
                         jetx.getCreatedAt(), jetx.getResultedAt(), 1.0,
                         jetx.getCurrency(), jetx.getUserId()))
                 .collect(Collectors.toList());
@@ -176,7 +176,7 @@ public class CasinoServiceImpl implements CasinoService {
        return plagmatics.getContent().stream()
                 .map(plagmatic -> new CasinoDTO("Plagmatic",
                         plagmatic.getGameId(),plagmatic.getAmount(),
-                        plagmatic.getAmountWon()/100,plagmatic.getStatus(), plagmatic.getWon(),
+                        plagmatic.getAmountWon(),plagmatic.getStatus(), plagmatic.getWon(),
                         plagmatic.getCreatedAt(),plagmatic.getResultedAt(), 1.0,
                         "BIF",plagmatic.getUserId()))
                 .collect(Collectors.toList());
@@ -216,7 +216,7 @@ public class CasinoServiceImpl implements CasinoService {
         log.info("Formatting Aviator {}", aviatorBets.getContent());
         return aviatorBets.getContent().stream().map(aviator -> new CasinoDTO("Aviatrix",
                         aviator.getGameId(),aviator.getAmount(),
-                        aviator.getAmountWon() / 100 ,aviator.isStatus() ? "resulted":"pending", aviator.getWon(),
+                        aviator.getAmountWon() ,aviator.isStatus() ? "resulted":"pending", aviator.getWon(),
                         aviator.getCreatedAt(),aviator.getResultedAt(), aviator.getOdds(), aviator.getCurrency(),aviator.getUserId()))
                 .collect(Collectors.toList());
     }

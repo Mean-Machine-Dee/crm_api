@@ -44,11 +44,13 @@ public interface CustomerService {
 
     GlobalResponse agentsData(Pageable pageable);
 
-    GlobalResponse getPlayers(String category, HttpServletResponse response);
+    GlobalResponse getPlayers(String category, String country, HttpServletResponse response);
 
     GlobalResponse bulkDeposit(MultipartFile file);
 
     GlobalResponse awardBonus(BonusWinnersRequest winnersRequest);
 
-    GlobalResponse getRate(String from, String to);
+    GlobalResponse getRate(String from, String to,String iso);
+
+    GlobalResponse getBetsPerSport(String id,String from,String to, Pageable pageable);
 }

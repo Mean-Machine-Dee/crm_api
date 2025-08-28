@@ -19,7 +19,10 @@ public interface DepositRepository extends JpaRepository<Deposit,Long> {
     List<Deposit> userDeposits(Long id);
 
     @Query(value="SELECT * FROM deposits WHERE user_id = ?1 AND telco = ?2 ORDER BY created_at DESC",nativeQuery = true)
-    Page<Deposit> userPagedDeposits(Long id, String telco,Pageable pageable );
+    Page<Deposit> userPagedDeposits(Long id, String telco,Pageable pageable);
+
+    @Query(value="SELECT * FROM deposits WHERE user_id = ?1 ORDER BY created_at DESC",nativeQuery = true)
+    Page<Deposit> userDepositsPaged(Long id,Pageable pageable);
 
     @Query(value = "SELECT SUM(`amount`) FROM deposits where date_deposited BETWEEN ?1 AND ?2", nativeQuery = true)
     Double findByDateBetween(Timestamp start, Timestamp finish);

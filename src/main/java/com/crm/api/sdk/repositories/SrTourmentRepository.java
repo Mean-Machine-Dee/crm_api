@@ -17,6 +17,6 @@ public interface SrTourmentRepository extends JpaRepository<SrTournament, Long> 
 
     Page<SrTournament> findByNameLike(String name, Pageable pageable);
 
-    @Query(value = "SELECT id,name,featured FROM sr_tournaments WHERE sr_sport_id = ?1 AND sr_category_id=?2", nativeQuery = true)
+    @Query(value = "SELECT id,name,featured,priority FROM sr_tournaments WHERE sr_sport_id = ?1 AND sr_category_id=?2", nativeQuery = true)
     List<TournamentSport> findAllBySportAndCategory(Long sportId, Long categoryId);
 }

@@ -19,7 +19,8 @@ public class Customer {
     private Long id;
     private String phone;
     private boolean verified;
-    private Timestamp created_at;
+    @Column(name = "created_at")
+    private Timestamp createdAt;
     private String iso;
 
     @OneToOne(mappedBy = "customer", fetch = FetchType.LAZY)

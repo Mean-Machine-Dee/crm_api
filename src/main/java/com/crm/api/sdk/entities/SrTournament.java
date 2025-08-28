@@ -24,6 +24,7 @@ public class SrTournament {
     private Long id;
     private String name;
     private Integer featured;
+    private Integer priority;
     @Column(name = "fr_name")
     private String frName;
 

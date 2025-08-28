@@ -553,8 +553,6 @@ public class BookieServiceImpl implements BookieService {
             paginatedBets = betRepository.findByBetCodeLike(code, pageable);
         }
 
-
-
         if(!paginatedBets.isEmpty()){
             Map<String,Object> response = appUtils.dataFormatter(paginatedBets.getContent(),paginatedBets.getNumber(),paginatedBets.getTotalElements(),paginatedBets.getTotalPages());
             return new GlobalResponse(response,true,false, "Bets list" );
@@ -653,6 +651,18 @@ public class BookieServiceImpl implements BookieService {
             return new GlobalResponse(null,true,false, "Game updated" );
         }
         return new GlobalResponse(null,false,true, "Game not found");
+    }
+
+    @Override
+    public GlobalResponse setLiveTournament(long id, int priority) {
+       Optional<SrTournament> tournament = srTourmentRepository.findById(id);
+       if(tournament.isPresent()){
+           SrTournament srTournament = tournament.get();
+           srTournament.setPriority(priority);
+           srTourmentRepository.save(srTournament);
+           return new GlobalResponse(null,true,false, "Tournament updated" );
+       }
+        return new GlobalResponse(null,false,true, "Tournament not found");
     }
 
 

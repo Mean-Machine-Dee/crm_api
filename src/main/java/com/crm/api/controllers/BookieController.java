@@ -102,6 +102,12 @@ public class BookieController {
         return  bookieService.highlightSingleGame(id,priority);
     }
 
+    @PatchMapping("tournaments/{id}")
+    public GlobalResponse setLive(@PathVariable(name = "id") long id,@RequestParam(name = "priority") int priority){
+
+        return  bookieService.setLiveTournament(id, priority);
+    }
+
 
     @PostMapping("jackpot")
     public GlobalResponse createJackpot(@RequestBody JackpotRequest jackpotRequest){

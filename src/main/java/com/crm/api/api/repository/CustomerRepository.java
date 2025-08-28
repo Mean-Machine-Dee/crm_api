@@ -41,5 +41,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @Query(value = "SELECT * FROM users WHERE id = ?1", nativeQuery = true)
     Customer findCustomerId(long id);
 
-    List<Customer> findByCreatedAtBetween(Timestamp start, Timestamp from);
+    @Query(value = "SELECT * FROM users WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
+    List<Customer> findByCreatedAtRange(String iso, Timestamp start, Timestamp from);
 }

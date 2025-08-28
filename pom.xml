@@ -11,7 +11,7 @@
 	<groupId>com.event</groupId>
 	<artifactId>api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 	<name>api</name>
 	<description>Demo project for Events</description>
 	<properties>
