@@ -1,6 +1,7 @@
 package com.crm.api.services;
 
 
+import com.crm.api.dtos.OddBoostRequest;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
 import org.springframework.core.io.Resource;
@@ -13,7 +14,7 @@ public interface BookieService {
 
     GlobalResponse highlightGames(TournamentRequest tournamentRequest);
 
-    GlobalResponse bets(Pageable pageable,String code);
+    GlobalResponse bets(Pageable pageable, String code, String country);
 
     GlobalResponse tournaments(Pageable pageable,String country);
 
@@ -29,7 +30,7 @@ public interface BookieService {
 
     GlobalResponse deleteSlide(long id);
 
-    GlobalResponse getRiskyBets(Pageable pageable);
+    GlobalResponse getRiskyBets(Pageable pageable, String country);
 
     GlobalResponse settleBet(long id);
 
@@ -59,7 +60,7 @@ public interface BookieService {
 
     GlobalResponse highlightSingleGame(long id, int priority);
 
-    GlobalResponse getJackpotBets(Pageable pageable, String code);
+    GlobalResponse getJackpotBets(Pageable pageable, String code,String country);
 
     GlobalResponse jackpots();
 
@@ -78,6 +79,12 @@ public interface BookieService {
     GlobalResponse removeGame(long id);
 
     GlobalResponse setLiveTournament(long id, int priority);
+
+    GlobalResponse boostOdds(OddBoostRequest oddBooster);
+
+    GlobalResponse activateBoostOdds(long id);
+
+    GlobalResponse boostedOdds();
 
 
 //    GlobalResponse searchBet(int code);

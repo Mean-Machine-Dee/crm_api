@@ -1,8 +1,10 @@
 package com.crm.api.services.impl;
 
 import com.crm.api.api.models.Bet;
+import com.crm.api.api.models.OddBooster;
 import com.crm.api.api.models.SmsDelivery;
 import com.crm.api.api.repository.BetRepository;
+import com.crm.api.api.repository.OddBoosterRepository;
 import com.crm.api.api.repository.SmsDeliverlyRepository;
 import com.crm.api.crm.models.Campaign;
 import com.crm.api.crm.models.Jackpot;
@@ -24,6 +26,8 @@ import com.crm.api.sdk.repositories.SrSportRepository;
 import com.crm.api.sdk.repositories.SrTourmentRepository;
 import com.crm.api.services.BookieService;
 import com.crm.api.utils.AppUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,10 +36,13 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -52,11 +59,19 @@ import java.util.stream.Collectors;
 @Service
 public class BookieServiceImpl implements BookieService {
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    RestTemplate restTemplate;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
     @Autowired
     private SrCompetitionRepository competitionRepository;
+
+    @Autowired
+    private OddBoosterRepository oddBoosterRepository;
 
     @Autowired
     private CampaignRepository campaignRepository;
@@ -118,24 +133,38 @@ public class BookieServiceImpl implements BookieService {
     @Override
     public GlobalResponse highlightGames(TournamentRequest tournamentRequest) {
        try{
-           if(tournamentRequest.getType().equalsIgnoreCase("featured")){
-               tournamentRequest.getIds().forEach(game->{
-                   log.info("To update is {} and {}", game.getPriority(), game.getId());
-                   competitionRepository.updateFeatured(game.getPriority(),game.getId());
-               });
+                String json = objectMapper.writeValueAsString(tournamentRequest);
+               Map<String,Object> map = new HashMap<>();
+               map.put("type","games");
+               map.put("data",json);
+               String data = objectMapper.writeValueAsString(map);
+               String results = sendPostRequest(data);
+               log.info("results are {}", results);
 
-           }
-
-           if(tournamentRequest.getType().equalsIgnoreCase("highlights")){
-               tournamentRequest.getIds().forEach(game->{
-                   log.info("To update highlights is {} and {}", game.getPriority(), game.getId());
-                   competitionRepository.updateHighlighted(game.getPriority(),game.getId());
-               });
-
-           }
+//           if(tournamentRequest.getType().equalsIgnoreCase("featured")){
+//               tournamentRequest.getIds().forEach(game->{
+//                   log.info("To update is {} and {}", game.getPriority(), game.getId());
+//                   try {
+//                       String json = objectMapper.writeValueAsString(tournamentRequest);
+//                       sendPostRequest(json);
+//                   } catch (JsonProcessingException e) {
+//                      log.info("error updating games {}", e.getMessage());
+//                   }
+//
+//               });
+//
+//           }
+//
+//           if(tournamentRequest.getType().equalsIgnoreCase("highlights")){
+//               tournamentRequest.getIds().forEach(game->{
+//                   log.info("To update highlights is {} and {}", game.getPriority(), game.getId());
+//                   sendPostRequest();
+//               });
+//
+//           }
            return new GlobalResponse(null,true,false, "Games updated");
        }catch (Exception e){
-           log.info("Error on updating fixtures {}",e.getMessage() );
+           log.info("Error on updating fixtures {}",e.getMessage());
            return new GlobalResponse(null,false,true, "Error updating matches" );
 
        }
@@ -146,12 +175,12 @@ public class BookieServiceImpl implements BookieService {
 
     @Override
     @Transactional(transactionManager = "apiDbTransactionManager")
-    public GlobalResponse bets(Pageable pageable,String code) {
+    public GlobalResponse bets(Pageable pageable, String code, String country) {
         Page<Bet> paginatedBets = null;
         if(code.equalsIgnoreCase("all")){
-            paginatedBets = betRepository.getPaginatedBets("normal",pageable);
+            paginatedBets = betRepository.getPaginatedBets(country,"normal",pageable);
         }else{
-            paginatedBets = betRepository.findByBetCodeLike(code, pageable);
+            paginatedBets = betRepository.findByBetCode(country,code, pageable);
         }
 
         log.info("Got Data {}", paginatedBets);
@@ -193,14 +222,38 @@ public class BookieServiceImpl implements BookieService {
     @Override
     public GlobalResponse updateTournament(CompetitionUpdateRequest request) {
         Optional<SrTournament> competition =  srTourmentRepository.findById(request.getId());
-        int status = request.isActive() ? 1: 0;
+
         if(competition.isPresent()){
-            SrTournament tournament = competition.get();
-            tournament.setFeatured(status);
-            srTourmentRepository.save(tournament);
+       try{
+           String json = objectMapper.writeValueAsString(request);
+           Map<String,Object> map = new HashMap<>();
+           map.put("type","tournament");
+           map.put("data",json);
+           String data = objectMapper.writeValueAsString(map);
+           String results = sendPostRequest(data);
+           log.info("results are {}", results);
+       }catch (Exception e){
+        log.info("Error sending post data {} --- {} ",e);
+       }
+
             return new GlobalResponse(null,true,false, "Competition updated successfully" );
         }
         return new GlobalResponse(null,false,true, "Competition with id "+ request.getId() + " not found" );
+    }
+
+    private String sendPostRequest(String json) {
+        String url = "https://games.rahisibet.com/api/update/games";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<>(json, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+        // Process the response
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return "Request successful. Response body: " + response.getBody();
+        } else {
+            return "Request failed. Status code: " + response.getStatusCode();
+        }
     }
 
     @Override
@@ -285,8 +338,8 @@ public class BookieServiceImpl implements BookieService {
     }
 
     @Override
-    public GlobalResponse getRiskyBets(Pageable pageable) {
-        Page<Bet> bets = betRepository.getRiskyBets(pageable);
+    public GlobalResponse getRiskyBets(Pageable pageable, String country) {
+        Page<Bet> bets = betRepository.getRiskyBets(country,pageable);
         if(!bets.isEmpty()){
           Map<String, Object> response = appUtils.dataFormatter(bets.getContent(),bets.getNumber(),bets.getTotalElements(),bets.getTotalPages());
           return new GlobalResponse(response,true,false, "bets");
@@ -308,7 +361,13 @@ public class BookieServiceImpl implements BookieService {
     @Override
     public GlobalResponse updateTopLeagues(LeaguePriority leagues) {
         try{
-            competitionRepository.updateHighlights(leagues.getTournaments());
+            String json = objectMapper.writeValueAsString(leagues);
+            Map<String,Object> map = new HashMap<>();
+            map.put("type","leagues");
+            map.put("data",json);
+            String data = objectMapper.writeValueAsString(map);
+            String results = sendPostRequest(data);
+            log.info("results are {}", results);
             return new GlobalResponse(null, true, false, "Games updated successfully");
         }catch (Exception e){
             return new GlobalResponse(null, false, true, e.getMessage());
@@ -342,8 +401,8 @@ public class BookieServiceImpl implements BookieService {
 
     @Override
     public GlobalResponse getBonusBets(String country, String from, String to, Pageable pageable) {
-        Timestamp start = appUtils.formatStringToTimestamp(from);
-        Timestamp end = appUtils.formatStringToTimestamp(to);
+        Timestamp start = appUtils.startOfDayTimestamp(from);
+        Timestamp end = appUtils.endOfDayTimestamp(to);
         Page<Bet> bets = betRepository.getBonusBetsPerCountry("bonus", country,start, end,pageable);
         if(bets != null){
 //            Map<String, List<Bet>> map = bets.getContent().stream().collect(Collectors.groupingBy(Bet::getIso));
@@ -397,8 +456,8 @@ public class BookieServiceImpl implements BookieService {
 
     @Override
     public GlobalResponse getSmses(String origin, String from, String to, Pageable pageable) {
-        Timestamp start = appUtils.formatStringToTimestamp(from);
-        Timestamp end = appUtils.formatStringToTimestamp(to);
+        Timestamp start = appUtils.startOfDayTimestamp(from);
+        Timestamp end = appUtils.endOfDayTimestamp(to);
 
         log.info("Searching for smses {} between {} and {} --- {} --- {}", origin,start,end,from,to);
         Page<SmsDelivery> data = smsDeliverlyRepository.getSmses(origin,start, end,pageable);
@@ -412,8 +471,8 @@ public class BookieServiceImpl implements BookieService {
 
     @Override
     public GlobalResponse aggregateSmses(String from, String to) {
-        Timestamp start = appUtils.formatStringToTimestamp(from);
-        Timestamp end = appUtils.formatStringToTimestamp(to);
+        Timestamp start = appUtils.startOfDayTimestamp(from);
+        Timestamp end = appUtils.endOfDayTimestamp(to);
         Long ats = smsDeliverlyRepository.aggregateSmses("ATS",start, end);
         Long lumitel = smsDeliverlyRepository.aggregateSmses("Lumitel",start, end);
         Map<String, Object> response = new HashMap<>();
@@ -428,8 +487,8 @@ public class BookieServiceImpl implements BookieService {
             return new GlobalResponse(null, false, true, "Games must be 17");
         }
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Timestamp starts = appUtils.formatStringToTimestamp(jackpotRequest.getStarts());
-        Timestamp ends = appUtils.formatStringToTimestamp(jackpotRequest.getCompletes());
+        Timestamp starts = appUtils.startOfDayTimestamp(jackpotRequest.getStarts());
+        Timestamp ends = appUtils.endOfDayTimestamp(jackpotRequest.getCompletes());
         Jackpot jackpot = Jackpot.builder()
                 .jackpotCode(UUID.randomUUID().toString().substring(0,10))
                 .status(true)
@@ -536,21 +595,23 @@ public class BookieServiceImpl implements BookieService {
     public GlobalResponse highlightSingleGame(long id, int priority) {
         SrCompetition competition = competitionRepository.findGame(id);
         if(competition != null){
-            competitionRepository.highlightSingle(priority,id);
+//            competitionRepository.highlightSingle(priority,id);
             return new GlobalResponse(null,true,false, "Match updated successfully" );
         }
         return new GlobalResponse(null,false,true, "No Game found" );
     }
 
+
+
     @Override
     @Transactional(transactionManager = "apiDbTransactionManager")
-    public GlobalResponse getJackpotBets(Pageable pageable, String code) {
+    public GlobalResponse getJackpotBets(Pageable pageable, String code, String country) {
         Page<Bet> paginatedBets = null;
         log.info("Getting all jackpots {}", code);
         if(code.equalsIgnoreCase("all")){
             paginatedBets = betRepository.getPaginatedJackpotBets("jackpot",pageable);
         }else{
-            paginatedBets = betRepository.findByBetCodeLike(code, pageable);
+            paginatedBets = betRepository.findByBetCode(country,code, pageable);
         }
 
         if(!paginatedBets.isEmpty()){
@@ -559,6 +620,7 @@ public class BookieServiceImpl implements BookieService {
         }
         return new GlobalResponse(null,false,true, "Error getting bets" );
     }
+
 
     @Override
     public GlobalResponse jackpots() {
@@ -657,12 +719,47 @@ public class BookieServiceImpl implements BookieService {
     public GlobalResponse setLiveTournament(long id, int priority) {
        Optional<SrTournament> tournament = srTourmentRepository.findById(id);
        if(tournament.isPresent()){
-           SrTournament srTournament = tournament.get();
-           srTournament.setPriority(priority);
-           srTourmentRepository.save(srTournament);
+           Map<String,Object> map = new HashMap<>();
+           Map<String,Object> data = new HashMap<>();
+           data.put("id",id);
+           data.put("priority",priority);
+           map.put("type","liveTournament");
+           map.put("data",data);
+         try{
+             String info = objectMapper.writeValueAsString(map);
+             String results = sendPostRequest(info);
+             log.info("results are {}", results);
+         } catch (JsonProcessingException e) {
+             throw new RuntimeException(e);
+         }
            return new GlobalResponse(null,true,false, "Tournament updated" );
        }
         return new GlobalResponse(null,false,true, "Tournament not found");
+    }
+
+    @Override
+    public GlobalResponse boostOdds(OddBoostRequest request) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        OddBooster oddBooster = new OddBooster(0L, false, request.getPercentage(), now);
+        oddBoosterRepository.save(oddBooster);
+        return new GlobalResponse(null, true, false, "Odd Boost Created Successfully");
+    }
+
+    @Override
+    public GlobalResponse activateBoostOdds(long id) {
+        Optional<OddBooster> booster = oddBoosterRepository.findById(id);
+        if(booster.isPresent()){
+            OddBooster oddBooster = booster.get();
+            oddBooster.setStatus(!oddBooster.isStatus());
+            oddBoosterRepository.save(oddBooster);
+        }
+        return new GlobalResponse(null, true, false, "Odd Boost updated Successfully");
+    }
+
+    @Override
+    public GlobalResponse boostedOdds() {
+        List<OddBooster> boosters = oddBoosterRepository.findAll();
+        return new GlobalResponse(boosters, true, false, "Odd Boost updated Successfully");
     }
 
 

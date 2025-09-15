@@ -2,6 +2,8 @@ package com.crm.api.controllers;
 
 
 
+import com.crm.api.api.models.Account;
+import com.crm.api.dtos.BonusWinner;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
 import com.crm.api.services.CustomerService;
@@ -183,9 +185,16 @@ public class CustomerController {
 
     @GetMapping("bets/sport/{id}")
     public GlobalResponse betsPerSport(@PathVariable(name = "id") String id,@RequestParam(name = "page") int page, @RequestParam(name = "size") int size,
-                                       @RequestParam(name = "from") String from, @RequestParam(name = "to") String to){
+                                       @RequestParam(name = "from") String from, @RequestParam(name = "to") String to,@RequestParam(name = "country") String country){
         Pageable pageable = PageRequest.of(page,size);
-        return customerService.getBetsPerSport(id,from,to,pageable);
+        return customerService.getBetsPerSport(id,from,to,pageable,country);
     }
+
+    @GetMapping("unlock/user/{id}")
+    public GlobalResponse unlock(@PathVariable(name = "id") Long id,@RequestParam(name = "type") String type){
+        return customerService.unlock(id,type);
+    }
+
+
 
 }

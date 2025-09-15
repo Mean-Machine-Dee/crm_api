@@ -1,7 +1,11 @@
 package com.crm.api.controllers;
 
+import com.crm.api.api.models.Account;
+import com.crm.api.api.models.OddBooster;
 import com.crm.api.crm.repository.JackpotMatchRepository;
 import com.crm.api.crm.repository.JackpotRepository;
+import com.crm.api.dtos.BonusWinner;
+import com.crm.api.dtos.OddBoostRequest;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
 import com.crm.api.services.BookieService;
@@ -66,17 +70,21 @@ public class BookieController {
     @GetMapping("bets")
     public GlobalResponse bets(@RequestParam(name = "page",defaultValue = "0") int page,
                                @RequestParam(name = "size", defaultValue = "15") int size,
-                               @RequestParam(name = "code",defaultValue = "all") String code){
+                               @RequestParam(name = "code",defaultValue = "all") String code,
+                               @RequestParam(name = "country",defaultValue = "BI") String country
+                               ){
         Pageable pageable = PageRequest.of(page,size);
-        return bookieService.bets(pageable,code);
+        return bookieService.bets(pageable,code,country);
     }
 
     @GetMapping("jackpot/bets")
     public GlobalResponse jackpotBets(@RequestParam(name = "page",defaultValue = "0") int page,
                                @RequestParam(name = "size", defaultValue = "15") int size,
-                               @RequestParam(name = "code",defaultValue = "all") String code){
+                               @RequestParam(name = "code",defaultValue = "all") String code,
+                               @RequestParam(name = "country",defaultValue = "BI") String country
+                                      ){
         Pageable pageable = PageRequest.of(page,size);
-        return bookieService.getJackpotBets(pageable,code);
+        return bookieService.getJackpotBets(pageable,code,country);
     }
 
 //    @PostMapping("search/bet/{code}")
@@ -161,9 +169,12 @@ public class BookieController {
     }
 
         @GetMapping("risky/bets")
-        public GlobalResponse risky(@RequestParam(name = "page",defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "15") int size){
+        public GlobalResponse risky(@RequestParam(name = "page",defaultValue = "0") int page,
+                                    @RequestParam(name = "size", defaultValue = "15") int size,
+                                    @RequestParam(name = "country", defaultValue = "BI") String country
+        ){
             Pageable pageable = PageRequest.of(page,size);
-            return bookieService.getRiskyBets(pageable);
+            return bookieService.getRiskyBets(pageable,country);
         }
 
         @GetMapping("settle/bet/{id}")
@@ -209,6 +220,22 @@ public class BookieController {
     @PutMapping("campaign/{id}")
     public GlobalResponse editCampaign(@PathVariable(name = "id") long id,@RequestParam("model") CampaignRequest campaignRequest){
         return bookieService.editCampaign(campaignRequest,id);
+    }
+
+    @PostMapping("boost/odds")
+    public GlobalResponse boostOdds(@RequestBody OddBoostRequest oddBooster){
+        return bookieService.boostOdds(oddBooster);
+    }
+
+    @GetMapping("boost/odds")
+    public GlobalResponse boostOdds(){
+        return bookieService.boostedOdds();
+    }
+
+
+    @GetMapping("boost/odds/{id}")
+    public GlobalResponse boostOdds(@PathVariable(name = "id") long id){
+        return bookieService.activateBoostOdds(id);
     }
 
 

@@ -18,10 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,12 +54,12 @@ public class DashboardServiceImpl implements DashboardService {
     private UserRepository userRepository;
 
 
-    public Map<String, Object> getTodayBets() {
+    public Map<String, Object> getTodayBets(String iso, Timestamp timestampStart, Timestamp timestampStop) {
 
         Map<String,Object> response = new HashMap<>();
 
-        log.info("FROM start {} to end at {} ",appUtils.startOfToday(), appUtils.getBurundiTime() );
-        List<Bet> bets = betRepository.getBetsByDate(appUtils.startOfToday(), appUtils.getBurundiTime());
+        log.info("FROM start {} to end at {} ",timestampStart, timestampStop );
+        List<Bet> bets = betRepository.getBetsByDateIso(iso,appUtils.startOfToday(), appUtils.getBurundiTime());
         log.info("bets {} ", bets.size());
         int won = 0;
         int lost = 0;
@@ -91,13 +89,12 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
 
-    public Map<String, Object> getPayments() {
-        log.info("Entering");
-        ZonedDateTime zdtStop = appUtils.getStartOfTommorow();
-        String stop = appUtils.formatDate(zdtStop).toString();
-        System.out.println("FROM " + stop + " start " +appUtils.startOfToday());
-        List<Withdrawals> withdrawals = withdrawRepository.getWithdrawals(appUtils.startOfToday(),stop);
-        List<Deposit> deposits = depositRepository.getDeposits(appUtils.startOfToday(),stop);
+    public Map<String, Object> getPayments(String iso, Timestamp timestampStart, Timestamp timestampStop) {
+
+        System.out.println("FROM " + timestampStart + " start " +timestampStop);
+        List<Withdrawals> withdrawals = withdrawRepository.getWithdrawals(iso,timestampStart,timestampStop);
+        String currency = appUtils.getCurrency(iso);
+        List<Deposit> deposits = depositRepository.getDeposits(currency,timestampStart,timestampStop);
         double depositedAmount = 0;
         double paidOut = 0;
         Map<String,Object> response = new HashMap<>();
@@ -120,29 +117,44 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public GlobalResponse getTodaysAggregates() {
+    public GlobalResponse getTodaysAggregates(String country, String from, String to, String stage) {
+
+        Timestamp timestampStart = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampStop = appUtils.endOfDayTimestamp(to);
+        if(stage.equalsIgnoreCase("landing")){
+            timestampStart = appUtils.startOfToday();
+            timestampStop = appUtils.getBurundiTime();
+        }
         Map<String,Object> response = new HashMap<>();
-        response.put("payments",getPayments());
-        log.info("Today payments");
-        response.put("signups", getTodaysSignups());
-        log.info("Today signups");
-        response.put("bets",getTodayBets());
-        log.info("Today bets");
+        response.put("payments",getPayments(country,timestampStart,timestampStop));
+        response.put("signups", getTodaysSignups(country,timestampStart,timestampStop));
+        response.put("bets",getTodayBets(country,timestampStart,timestampStop));
+        response.put("recentDeposits",getTodayDeposits(country,timestampStart,timestampStop));
         return new GlobalResponse(response,true,false,"aggregation");
     }
 
-    private Object getTodaysSignups() {
-        ZonedDateTime zdtStop = appUtils.getStartOfTommorow();
-        String stop = appUtils.formatDate(zdtStop).toString();
-        log.info("Sign ups start {} and end {}",appUtils.startOfToday(), appUtils.getBurundiTime());
-        return customerRepository.findTodaysSignUps(appUtils.startOfToday(), appUtils.getBurundiTime());
+    private Object getTodayDeposits(String country, Timestamp timestampStart, Timestamp timestampStop) {
+
+        String currency = appUtils.getCurrency(country);
+        return depositRepository.getDepositTimeFrameCurrency(currency, timestampStart, timestampStop);
+    }
+
+    private Object getTodaysSignups(String country, Timestamp timestampStart, Timestamp timestampStop) {
+        log.info("Sign ups start {} and end {}",timestampStart, timestampStop);
+        return customerRepository.findTodaysSignUps(country,timestampStart, timestampStop);
     }
 
     @Override
-    public GlobalResponse getAggregates() {
+    public GlobalResponse getAggregates(String country, String from, String to, String stage) {
+        Timestamp timestampStart = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampStop = appUtils.endOfDayTimestamp(to);
+        if(stage.equalsIgnoreCase("landing")){
+            timestampStart = appUtils.startOfToday();
+            timestampStop = appUtils.getBurundiTime();
+        }
         Map<String,Object> response = new HashMap<>();
-        response.put("clients",customerRepository.count());
-        response.put("active",betRepository.activeBets(false));
+        response.put("clients",customerRepository.findCustomersByIsoCode(country,timestampStart,timestampStop));
+        response.put("active",betRepository.activeBets(false, country,timestampStart,timestampStop));
         return new GlobalResponse(response,true,false,"Aggregation");
     }
 
@@ -153,7 +165,7 @@ public class DashboardServiceImpl implements DashboardService {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             Dispatch dispatch = new Dispatch(
                     0L,user.get().getId(),dispatchRequest.getMessage(),false,
-                    timestamp,timestamp, appUtils.formatStringToTimestamp(dispatchRequest.getDate()),
+                    timestamp,timestamp, appUtils.endOfDayTimestamp(dispatchRequest.getDate()),
                     dispatchRequest.getType(),
                     dispatchRequest.getLang()
                     );
@@ -193,6 +205,34 @@ public class DashboardServiceImpl implements DashboardService {
        }
            return new GlobalResponse(null,false,true,"No Bonus abusers for this range");
 
+    }
+
+    @Override
+    public GlobalResponse getSignUpsByIso(String country, String from, String to, String stage) {
+        Timestamp timestampStart = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampStop = appUtils.endOfDayTimestamp(to);
+        if(stage.equalsIgnoreCase("landing")){
+            timestampStart = appUtils.startOfToday();
+            timestampStop = appUtils.getBurundiTime();
+        }
+        Integer customers = customerRepository.findCustomersByIsoCode(country, timestampStart, timestampStop);
+      if(customers > 0){
+          return new GlobalResponse(customers,true,false,"Customers for " + country);
+      }else{
+          return new GlobalResponse(null,false,true,"No customers");
+      }
+    }
+
+    @Override
+    public GlobalResponse getSignUps() {
+        Long customers = customerRepository.count();
+        return new GlobalResponse(customers,true,false,"All time customers");
+    }
+
+    @Override
+    public GlobalResponse getSignUpsByCountry(String country) {
+        Long customers = customerRepository.findCustomersByCountry(country);
+        return new GlobalResponse(customers,true,false,"All time customers");
     }
 
 

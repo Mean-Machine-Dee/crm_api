@@ -39,8 +39,8 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public GlobalResponse dashboard(LonaRequest reportRequest) {
-        Timestamp from = appUtils.formatStringToTimestamp(reportRequest.getFrom());
-        Timestamp to = appUtils.formatStringToTimestamp(reportRequest.getTo());
+        Timestamp from = appUtils.startOfDayTimestamp(reportRequest.getFrom());
+        Timestamp to = appUtils.endOfDayTimestamp(reportRequest.getTo());
         GlobalResponse globalResponse;
         Double deposits = depositRepository.findTotalBetween(from,to);
         Double withdrawals = withdrawRepository.findTotalBetween(from,to);
@@ -54,8 +54,8 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public GlobalResponse providerReport(LonaRequest providerRequest) {
         GlobalResponse globalResponse = null;
-        Timestamp from = appUtils.formatStringToTimestamp(providerRequest.getFrom());
-        Timestamp to = appUtils.formatStringToTimestamp(providerRequest.getTo());
+        Timestamp from = appUtils.startOfDayTimestamp(providerRequest.getFrom());
+        Timestamp to = appUtils.endOfDayTimestamp(providerRequest.getTo());
 
             //search todays
            try{

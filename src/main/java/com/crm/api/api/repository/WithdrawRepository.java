@@ -13,8 +13,8 @@ import java.util.List;
 
 @Repository
 public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
-    @Query(value="SELECT * FROM payments WHERE trans_date between ?1 AND ?2",nativeQuery = true)
-    List<Withdrawals> getWithdrawals(Timestamp startOfToday, String stop);
+    @Query(value="SELECT * FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3",nativeQuery = true)
+    List<Withdrawals> getWithdrawals(String iso,Timestamp startOfToday, Timestamp stop);
 
     @Query(value="SELECT * FROM payments WHERE phone = ?1 ORDER BY created_at DESC",nativeQuery = true)
     List<Withdrawals> userB2c(String phone);
@@ -34,7 +34,7 @@ public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
     @Query(value="SELECT * FROM payments WHERE trans_date between ?1 AND ?2 ",nativeQuery = true)
     List<Withdrawals> getWithdrawalBetween(Timestamp startOfToday, Timestamp stop);
 
-    @Query(value = "SELECT SUM(`amount`) FROM payments where currency = ?1 AND trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
+    @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 AND trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
     Double findByCurrency(String currency, Timestamp start, Timestamp finish);
     @Query(value = "SELECT SUM(`amount`) FROM payments", nativeQuery = true)
     Double findAllTime();

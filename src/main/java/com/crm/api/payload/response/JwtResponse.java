@@ -18,4 +18,5 @@ public class JwtResponse {
     private String email;
     private List<String> roles;
     private Long expiry;
+    private String thumbnail;
 }

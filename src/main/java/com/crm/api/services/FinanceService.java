@@ -13,7 +13,7 @@ public interface FinanceService {
 
     GlobalResponse filterLona(LonaRequest lonaRequest, Pageable pageable);
 
-    GlobalResponse lonaTaxes(LonaRequest lonaRequest);
+    GlobalResponse lonaTaxes(LonaRequest lonaRequest, String type);
 
     GlobalResponse remit(RemitDate remitDate);
 
@@ -23,4 +23,10 @@ public interface FinanceService {
 
 
     GlobalResponse getAppCounter();
+
+    GlobalResponse payDirect(DirectTransferRequest request);
+
+    GlobalResponse filterCashflow(String type);
+
+    GlobalResponse getPaymentSettings();
 }

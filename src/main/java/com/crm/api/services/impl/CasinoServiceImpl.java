@@ -38,7 +38,7 @@ public class CasinoServiceImpl implements CasinoService {
     @Autowired
     private AviatrixRepository aviatrixRepository;
     @Override
-    public GlobalResponse casinoBets(String provider, Pageable pageable) {
+    public GlobalResponse casinoBets(String provider, Pageable pageable, String country) {
         log.info("Changing {}", provider);
        if(provider.equalsIgnoreCase("plagmatic"))
        {
@@ -63,8 +63,8 @@ public class CasinoServiceImpl implements CasinoService {
 
     @Override
     public GlobalResponse filterCasinos(String provider, String from, String to, Pageable pageable) {
-        Timestamp start = appUtils.formatStringToTimestamp(from);
-        Timestamp finish = appUtils.formatStringToTimestamp(to);
+        Timestamp start = appUtils.startOfDayTimestamp(from);
+        Timestamp finish = appUtils.endOfDayTimestamp(to);
         int currentPage = 0;
         int totalPages = 0;
         int nextPage = 0;

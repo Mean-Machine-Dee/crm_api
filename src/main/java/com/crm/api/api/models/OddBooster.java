@@ -7,23 +7,19 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import java.sql.Timestamp;
 
-@Table(name = "global")
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Setting {
-
+@Table(name = "odd_booster")
+public class OddBooster {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private long id;
+    private boolean status;
+    private int percent;
     @Column(name = "created_at")
     private Timestamp createdAt;
-    @Column(name = "updated_at")
-    private Timestamp updatedAt;
-    private String status;
-    private String service;
-    private int span;
-    private String prsp;
-    private String country;
+
 }

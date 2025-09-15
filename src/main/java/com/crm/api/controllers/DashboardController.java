@@ -26,13 +26,36 @@ public class DashboardController {
 
 
     @GetMapping("aggregation")
-    public GlobalResponse aggregation(){
-        return dashboardService.getAggregates();
+    public GlobalResponse aggregation(@RequestParam(name = "country") String country,
+                                      @RequestParam(name = "from") String from,
+                                      @RequestParam(name = "to") String to,
+                                      @RequestParam(name = "stage",defaultValue = "landing") String stage){
+        return dashboardService.getAggregates(country,from,to,stage);
     }
 
     @GetMapping("todays")
-    public GlobalResponse todayAggregates(){
-        return dashboardService.getTodaysAggregates();
+    public GlobalResponse todayAggregates(@RequestParam(name = "country") String country,
+                                          @RequestParam(name = "from") String from,
+                                          @RequestParam(name = "to") String to,
+                                          @RequestParam(name = "stage",defaultValue = "landing") String stage){
+        return dashboardService.getTodaysAggregates(country,from,to,stage);
+    }
+
+    @GetMapping("signups")
+    public GlobalResponse signups(@RequestParam(name = "country") String country,@RequestParam(name = "from") String from,
+                                  @RequestParam(name = "to") String to,
+                                  @RequestParam(name = "stage",defaultValue = "landing") String stage ){
+        return dashboardService.getSignUpsByIso(country,from,to,stage);
+    }
+
+    @GetMapping("signups/count")
+    public GlobalResponse signupsCount(){
+        return dashboardService.getSignUps();
+    }
+
+    @GetMapping("signups/country")
+    public GlobalResponse signupsCount(@RequestParam(name = "country") String country){
+        return dashboardService.getSignUpsByCountry(country);
     }
 
     @PostMapping("dispatches")

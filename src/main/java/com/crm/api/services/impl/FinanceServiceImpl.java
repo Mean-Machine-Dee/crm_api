@@ -10,12 +10,16 @@ import com.crm.api.api.repository.SettingRepository;
 import com.crm.api.api.repository.WithdrawRepository;
 import com.crm.api.crm.models.Submission;
 import com.crm.api.crm.repository.SubmissionRepository;
+import com.crm.api.dtos.LonaRemit;
 import com.crm.api.lona.models.Lona;
 import com.crm.api.lona.respositories.LonaRepository;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
 import com.crm.api.services.FinanceService;
 import com.crm.api.utils.AppUtils;
+import com.crm.api.utils.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,18 +27,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.sql.Array;
 import java.sql.Timestamp;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class FinanceServiceImpl implements FinanceService {
 
     AppUtils appUtils = new AppUtils();
+    @Autowired
+    private ObjectMapper objectMapper;
+
 
     @Autowired
     private DepositRepository depositRepository;
@@ -58,26 +64,32 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     public GlobalResponse search(PaymentsSearchRequest search) {
-        Timestamp start = appUtils.formatStringToTimestamp(search.getFrom());
-        Timestamp finish = appUtils.formatStringToTimestamp(search.getTo());
-        log.info("Dates are {} and {}", start,finish);
+        Timestamp start = appUtils.startOfDayTimestamp(search.getFrom());
+        Timestamp finish = appUtils.endOfDayTimestamp(search.getTo());
+        Timestamp startToday = appUtils.startOfToday();
+        Timestamp finishToday = appUtils.getBurundiTime();
+        log.info("Dates are {} and {} search is {}", start,finish, search);
         GlobalResponse globalResponse = null;
         //deposits
         try {
             if(search.getType().equalsIgnoreCase("payments")){
-                Double todays = paymentRepository.findByDateBetween(start, finish);
+                Double searched = paymentRepository.findByDateBetween(start, finish);
+                Double todays = paymentRepository.findByDateBetween(startToday, finishToday);
                 Double total = paymentRepository.findAllTime();
                 Map<String, Object> response = new HashMap<>();
-                response.put("searched", todays);
+                response.put("searched", searched);
+                response.put("todays", todays);
                 response.put("total", total);
-                globalResponse = new GlobalResponse(response,true,false,"finances");
+                globalResponse = new GlobalResponse(response,true,false,"payments");
             }else{
-                Double deposits = depositRepository.findByDateBetween(start, finish);
+                Double searched = depositRepository.findByDateBetween(start, finish);
+                Double todays = depositRepository.findByDateBetween(startToday, finishToday);
                 Double payouts = depositRepository.findAllTime();
                 Map<String, Object> response = new HashMap<>();
-                response.put("searched", deposits);
+                response.put("searched", searched);
+                response.put("todays", todays);
                 response.put("total", payouts);
-                globalResponse = new GlobalResponse(response,true,false,"finances");
+                globalResponse = new GlobalResponse(response,true,false,"deposits");
             }
 
             return globalResponse;
@@ -92,8 +104,8 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public GlobalResponse filterPaymentsByPSP(PSPRequest search) {
         Map<String,Object> response = new HashMap<>();
-        Timestamp start = appUtils.formatStringToTimestamp(search.getFrom());
-        Timestamp finish = appUtils.formatStringToTimestamp(search.getTo());
+        Timestamp start = appUtils.startOfDayTimestamp(search.getFrom());
+        Timestamp finish = appUtils.endOfDayTimestamp(search.getTo());
 //        GlobalResponse globalResponse;
 
 //        if(search.getCurrency() != null){
@@ -126,9 +138,8 @@ public class FinanceServiceImpl implements FinanceService {
 
         try{
             String prsp = appUtils.getPRSP("payment", search.getName());
-            log.info("PRSP is {}", prsp);
+            log.info("PRSP is {} from {} to {}", prsp,start,finish);
             Double paid = paymentRepository.findByTelcoBetween(prsp,start,finish);
-
             List<Withdrawals> withdrawals = paymentRepository.getWithdrawalTimeFrame(prsp,start,finish);
             response.put("payments", withdrawals);
             response.put("total", paid);
@@ -141,8 +152,8 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     public GlobalResponse filterLona(LonaRequest lonaRequest, Pageable pageable) {
-        Timestamp start = appUtils.formatStringToTimestamp(lonaRequest.getFrom());
-        Timestamp finish = appUtils.formatStringToTimestamp(lonaRequest.getTo());
+        Timestamp start = appUtils.startOfDayTimestamp(lonaRequest.getFrom());
+        Timestamp finish = appUtils.endOfDayTimestamp(lonaRequest.getTo());
         try {
             Page<Lona> lonas = lonaRepository.filterBets(start, finish, pageable);
             if(!lonas.isEmpty()){
@@ -158,10 +169,16 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public GlobalResponse lonaTaxes(LonaRequest lonaRequest) {
+    public GlobalResponse lonaTaxes(LonaRequest lonaRequest, String type) {
         Map<String,Object> response = new HashMap<>();
-        Timestamp start = appUtils.formatStringToTimestamp(lonaRequest.getFrom());
-        Timestamp finish = appUtils.formatStringToTimestamp(lonaRequest.getTo());
+        Timestamp start = appUtils.startOfDayTimestamp(lonaRequest.getFrom());
+        Timestamp finish = appUtils.endOfDayTimestamp(lonaRequest.getTo());
+        if(type.equalsIgnoreCase("landing")){
+           start = appUtils.minusDays(1);
+           finish = appUtils.startOfToday();
+        }
+
+        log.info("GETTING FROM {} to {}",start,finish);
         double excise = 0;
         double holding = 0;
         double won = 0;
@@ -227,10 +244,16 @@ public class FinanceServiceImpl implements FinanceService {
     public GlobalResponse remit(RemitDate remitDate) {
         Timestamp dt = appUtils.formatStringToTimestamp(remitDate.getDate());
         String url = "https://remit.rahisibet.com/api/lona";
-        Map<String, String> request = new HashMap<>();
-        request.put("date", String.valueOf(dt));
+        LonaRemit remit = new LonaRemit();
+        remit.setDate(String.valueOf(dt));
+
+
         try{
-            //String response = restTemplate.postForObject(url, request, String.class);
+            String json = objectMapper.writeValueAsString(remit);
+            log.info("Lona remittance response {}", json);
+//            String response = restTemplate.postForObject(url, json, String.class);
+
+//            log.info("Lona remittance response {}", response);
             return new GlobalResponse(null, true,false, "remited");
         }catch (Exception e){
             return new GlobalResponse(e.getMessage(), false,true, null);
@@ -252,25 +275,37 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     public GlobalResponse setSettings(SettingRequest request) {
-       List<Setting> settings = settingRepository.findByPRSPName(request.getPrsp());
-       List<Setting> list = settingRepository.getAll();
-       log.info("All are {}", list);
-        log.info("Setting request is {} and {} setting is {}", request.getPrsp(), request.getService(), settings);
-        if(settings != null){
-            for (Setting setting : settings){
-                if(setting.getService().equals(request.getService())){
-                    try{
-                        setting.setStatus(request.getStatus());
-                        setting.setSpan(request.getSpan());
-                        setting.setPrsp(request.getPrsp());
-                        settingRepository.save(setting);
-
-                    }catch (Exception e){
-                        return new GlobalResponse(e.getMessage(),false,true,"error");
-                    }
-                }
-            }
-            return new GlobalResponse(null,true,false,"success");
+//       List<Setting> settings = settingRepository.findByPRSPName(request.getPrsp());
+//       List<Setting> list = settingRepository.getAll();
+//       log.info("All are {}", list);
+//
+//        if(settings != null){
+//            for (Setting setting : settings){
+//                log.info("Checking request{} and setting {}", request, setting);
+//                if(setting.getPrsp().equalsIgnoreCase(request.getPrsp()) && setting.getService().equalsIgnoreCase(request.getService()) && setting.getCountry().equalsIgnoreCase(request.getCountry())){
+//                    log.info("Its a match");
+//                    try{
+//                        String statusRequest = request.getStatus().equalsIgnoreCase("Deactivate") ? "DeActivate":request.getStatus();
+//                        setting.setStatus(statusRequest);
+//                        setting.setSpan(request.getSpan());
+//                        setting.setPrsp(request.getPrsp());
+//                        settingRepository.save(setting);
+//                    }catch (Exception e){
+//                        return new GlobalResponse(e.getMessage(),false,true,"error");
+//                    }
+//                }else{
+//                    log.info("No match found");
+//                }
+//            }
+//            return new GlobalResponse(null,true,false,"success");
+//        }
+        Optional<Setting> setting = settingRepository.findById(request.getId());
+        String status = request.getStatus().equalsIgnoreCase("active") ? "Activate" : "DeActivate";
+        if(setting.isPresent()){
+            Setting service = setting.get();
+            service.setStatus(status);
+            settingRepository.save(service);
+            return new GlobalResponse(null,true,false,"Setting set successfully");
         }
         return new GlobalResponse(null,false,true,"No setting found");
     }
@@ -285,6 +320,44 @@ public class FinanceServiceImpl implements FinanceService {
         return new GlobalResponse(response, true,false,"App Counter List");
     }
 
+    @Override
+    public GlobalResponse payDirect(DirectTransferRequest request) {
+        try{
+
+            request.setCurrency("BIF");
+            request.setProvider("lumicash");
+            log.info("Transfer {}", request);
+            String json = objectMapper.writeValueAsString(request);
+            String response = restTemplate.postForObject(Constants.TRANSFER_URL, json, String.class);
+            log.info("Direct Transfer response {}",response);
+            return new GlobalResponse(response, true,false,"Withdrawal successfull");
+        } catch (JsonProcessingException e) {
+            return new GlobalResponse(e.getMessage(), true,false,"Withdrawal successfull");
+        }
+
+    }
+
+    @Override
+    public GlobalResponse filterCashflow(String type) {
+        Timestamp start = appUtils.startOfToday();
+        Timestamp finish = appUtils.getStopDate();
+        log.info("Between {} and {} ", start,finish);
+        Double todays = 0.0;
+       if(type.equalsIgnoreCase("deposit")){
+          Integer deposits = depositRepository.findByTelcoBetween("Lumitel", start, finish);
+           todays = deposits != 0 ? Double.valueOf(deposits) : 0.0;
+       }else{
+          todays = paymentRepository.findByCurrency("BI",start,finish);
+       }
+        return new GlobalResponse(todays, true,false,"Today's Payments");
+    }
+
+    @Override
+    public GlobalResponse getPaymentSettings() {
+        List<Setting> settings = settingRepository.getAll();
+        return new GlobalResponse(settings, true,false,"Payments service");
+    }
+
 
     private Double withoutTax(double payout, double withHolding, int stake, double excise) {
         double withoutWH = payout + withHolding;
@@ -297,8 +370,8 @@ public class FinanceServiceImpl implements FinanceService {
         int deposits = 0;
         Map<String,Object> response = new HashMap<>();
         GlobalResponse globalResponse = null;
-        Timestamp start = appUtils.formatStringToTimestamp(search.getFrom());
-        Timestamp finish = appUtils.formatStringToTimestamp(search.getTo());
+        Timestamp start = appUtils.startOfDayTimestamp(search.getFrom());
+        Timestamp finish = appUtils.endOfDayTimestamp(search.getTo());
 
             if(search.getCurrency() != null){
                 try{

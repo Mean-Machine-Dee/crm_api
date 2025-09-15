@@ -9,6 +9,7 @@ import com.crm.api.crm.repository.TicketRepository;
 import com.crm.api.crm.repository.UserRepository;
 import com.crm.api.dtos.ActivityDTO;
 import com.crm.api.dtos.CustomerDTO;
+import com.crm.api.dtos.PlayersOnly;
 import com.crm.api.dtos.TicketDTO;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
@@ -16,7 +17,6 @@ import com.crm.api.services.CustomerService;
 import com.crm.api.services.WalletService;
 import com.crm.api.utils.AppUtils;
 import com.crm.api.utils.ThreadExecutor;
-import com.google.protobuf.MapEntry;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
@@ -40,9 +40,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -524,47 +521,44 @@ public class CustomerServiceImpl implements CustomerService {
     public GlobalResponse getPlayers(String category,String country, HttpServletResponse response) {
         //TODO:: make this to be downloadable via csv file
         Timestamp now = appUtils.getBurundiTime();
-       Timestamp to = appUtils.minusDays(20);
+       Timestamp to = appUtils.minusDays(1);
 
         //Active users ...
         //VIP users
         //Dormant Users
-        logger.info("search from  {} -- {}",now,to);
-        List<Bet> betList = betRepository.findBetsWithinAWeek(country,now,to);
+        logger.info("search from  {} -- {} -- iso code --- {}",now,to,country);
+        List<Bet> betList = betRepository.findBetsWithinAWeek(country,to,now);
         logger.info("betList is {}", betList.size());
         Map<Long, Double> collected = betList.stream().collect(Collectors.groupingBy(Bet::getUserId, Collectors.summingDouble(Bet::getAmount)));
-        List<Long> vip = new ArrayList<>();
-        List<Long> activeUsers = new ArrayList<>();
+        Map<Long, Double> vip = new HashMap<>();
+        Map<Long,Double> activeUsers = new HashMap<>();
         for (Map.Entry<Long,Double> entry: collected.entrySet()){
             if(entry.getValue() >= 500000){
-                logger.info("Vip is {}", entry.getValue());
-                vip.add(entry.getKey());
+                vip.put(entry.getKey(), entry.getValue());
             }else{
-                logger.info("active user is {}", entry.getValue());
-                activeUsers.add(entry.getKey());
+                activeUsers.put(entry.getKey(), entry.getValue());
             }
 
         }
 
 
-        logger.info("Vip is {} --- active user", vip,activeUsers);
+
 
         //TODO:: all filters should be in a week
         //TODO:: Bets worth above 500k, Top winners and casinos
         //TODO:: users have value 500k add a bonus amount stake after tax
         //TODO:: active users anyone placed a bet within a week
         //TODO:: not placed a bet in a months time:: idle list
-
+        Map<String, Object> stringObjectMap = new HashMap<>();
         List<String> byIds = new ArrayList<>();
         if(category.equalsIgnoreCase("vip")){
-            byIds = customerRepository.findByIds(vip);
+            stringObjectMap = appUtils.dataFormatter(vip, 1, byIds.size(), byIds.size());
+//            byIds = customerRepository.findByIds(vip.keySet());
         }else if(category.equalsIgnoreCase("active")){
-            byIds = customerRepository.findByIds(activeUsers);
+            stringObjectMap = appUtils.dataFormatter(activeUsers, 1, byIds.size(), byIds.size());
         }else{
             logger.info("Dormant users");
         }
-
-        Map<String, Object> stringObjectMap = appUtils.dataFormatter(byIds, 1, byIds.size(), byIds.size());
         return new GlobalResponse(stringObjectMap,true,false,"Data");
 
     }
@@ -613,33 +607,38 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public GlobalResponse getRate(String from, String to,String iso) {
-        Timestamp start = appUtils.formatStringToTimestamp(from);
-        Timestamp finish = appUtils.formatStringToTimestamp(to);
+        Timestamp start = appUtils.startOfDayTimestamp(from);
+        Timestamp finish = appUtils.endOfDayTimestamp(to);
         List<Customer> customers = customerRepository.findByCreatedAtRange(iso,start,finish);
         List<Long> customerIds = customers.stream().map(Customer::getId).collect(Collectors.toList());
         List<Deposit> deposits = depositRepository.getByIds(customerIds);
         Map<Long, List<Deposit>> collected = deposits.stream().collect(Collectors.groupingBy(Deposit::getUser_id));
+        //customers vs those who have deposited
+        double conversionRate = 0.0;
+        if(!customers.isEmpty() && !collected.isEmpty()){
+            conversionRate = (double) customers.size() / collected.size();
+        }
         Double amountDeposited = deposits.stream().mapToDouble(Deposit::getAmount).sum();
-        int rate = customerIds.size() / collected.size() * 100;
         //List<Bet> bets = betRepository.findByIds(customerIds);
+        //customerSize
         Map<String,Object> response = new HashMap<>();
         response.put("customers", customers.size());
         response.put("deposits", collected.size());
 //        response.put("depositPerUser",collected);
         response.put("deposited",amountDeposited);
-        response.put("conversion", rate);
+        response.put("conversion", conversionRate);
         return new GlobalResponse(response, true, false, "Conversion rate");
 
     }
 
     @Override
-    public GlobalResponse getBetsPerSport(String id, String from, String to, Pageable pageable) {
+    public GlobalResponse getBetsPerSport(String id, String from, String to, Pageable pageable, String country) {
         String sport = getSportFromId(id);
 
-            Timestamp start = appUtils.formatStringToTimestamp(from);
-            Timestamp finish = appUtils.formatStringToTimestamp(to);
+            Timestamp start = appUtils.startOfDayTimestamp(from);
+            Timestamp finish = appUtils.endOfDayTimestamp(to);
             logger.info("Get {} {} {} {} ", id, sport,start,finish);
-            Page<Bet> bets = betRepository.getPaginatedBetsByDate(start,finish, pageable);
+            Page<Bet> bets = betRepository.getPaginatedBetsByDate(country,start,finish, pageable);
             List<Bet> betsData = new ArrayList<>();
             Map<String, Object> response = new HashMap<>();
             logger.info("Filtering.... size is {}",bets.getContent().size());
@@ -665,6 +664,21 @@ public class CustomerServiceImpl implements CustomerService {
 
 
         }
+
+    @Override
+    public GlobalResponse unlock(Long id, String type) {
+        Account account = accountRepository.findByOwnerId(id);
+        if(account != null){
+            if(type.equalsIgnoreCase("betting")){
+                account.setBlocked(false);
+            }else{
+                account.setBlock_withdraw(false);
+            }
+            accountRepository.save(account);
+            return new GlobalResponse(null,true,false,"user blocked successfully");
+        }
+        return new GlobalResponse(null,false,true,"No user found");
+    }
 
     private String getSportFromId(String id) {
         String name;

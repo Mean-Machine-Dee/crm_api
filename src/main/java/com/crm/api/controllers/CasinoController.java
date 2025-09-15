@@ -22,12 +22,13 @@ public class CasinoController {
 
     @GetMapping("bets")
     public GlobalResponse getCasinoBets(@RequestParam(name = "provider", defaultValue = "pragmatic") String provider,
+                                        @RequestParam(name = "country", defaultValue = "BI") String country,
                                         @RequestParam(name = "page", defaultValue = "0") int page,
                                         @RequestParam(name = "size", defaultValue = "15") int size
     ) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("created_at").descending());
-        return service.casinoBets(provider, pageable);
+        return service.casinoBets(provider, pageable,country);
     }
 
 

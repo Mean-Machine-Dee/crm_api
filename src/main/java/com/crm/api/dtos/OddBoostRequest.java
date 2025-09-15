@@ -1,4 +1,4 @@
-package com.crm.api.payload.requests;
+package com.crm.api.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SettingRequest {
-    private Long id;
-    private String status;
+public class OddBoostRequest {
+    private int percentage;
 }

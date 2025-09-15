@@ -16,10 +16,13 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     @Query(value="SELECT * FROM bets WHERE created_at BETWEEN ?1 AND ?2", nativeQuery = true)
     List<Bet> getBetsByDate(Timestamp burundiTime,Timestamp stop);
 
+    @Query(value="SELECT * FROM bets WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
+    List<Bet> getBetsByDateIso(String iso,Timestamp burundiTime,Timestamp stop);
 
 
-    @Query(value="SELECT * FROM bets WHERE created_at BETWEEN ?1 AND ?2", nativeQuery = true)
-    Page<Bet> getPaginatedBetsByDate(Timestamp burundiTime,Timestamp stop, Pageable pageable);
+
+    @Query(value="SELECT * FROM bets WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
+    Page<Bet> getPaginatedBetsByDate(String country,Timestamp burundiTime,Timestamp stop, Pageable pageable);
 
 
     @Query(value="SELECT * FROM bets WHERE won = 1 AND created_at BETWEEN ?1 AND ?2 LIMIT 1000", nativeQuery = true)
@@ -29,8 +32,8 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     List<Bet> getWonBetsByDateAndCountry(String iso, Timestamp burundiTime,Timestamp stop);
 
 
-    @Query(value="SELECT COUNT(id) FROM bets WHERE status = ?1", nativeQuery = true)
-    Integer activeBets(boolean status);
+    @Query(value="SELECT COUNT(id) FROM bets WHERE status = ?1 AND iso = ?2 AND created_at BETWEEN ?3 AND ?4", nativeQuery = true)
+    Integer activeBets(boolean status, String country, Timestamp timestampStart, Timestamp timestampStop);
 
     @Query(value="SELECT * FROM bets WHERE user_id = ?1 ORDER BY created_at DESC", nativeQuery = true)
     List<Bet> getClientBets(int id);
@@ -39,15 +42,15 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     Page<Bet> getPagedClientBets(long id, Pageable page);
 
 
-    @Query(value="SELECT * FROM bets WHERE type =?1  ORDER BY created_at DESC", nativeQuery = true)
-    Page<Bet> getPaginatedBets(String normal,Pageable page);
+    @Query(value="SELECT * FROM bets WHERE iso=?1 AND type =?2 ORDER BY created_at DESC", nativeQuery = true)
+    Page<Bet> getPaginatedBets(String iso,String normal,Pageable page);
 
 //    Optional<Bet> findByBetCode(int code);
+    @Query(value="SELECT * FROM bets WHERE iso=?1 AND bet_code Like %?2% ORDER BY created_at DESC", nativeQuery = true)
+    Page<Bet> findByBetCode(String iso,String code, Pageable pageable);
 
-    Page<Bet> findByBetCodeLike(String code, Pageable pageable);
-
-    @Query(value = "SELECT * FROM bets WHERE is_review = 1 AND status = 0 ORDER BY created_at ASC", nativeQuery = true)
-    Page<Bet> getRiskyBets(Pageable pageable);
+    @Query(value = "SELECT * FROM bets WHERE is_review = 1 AND status = 0 AND status = ?1 ORDER BY created_at ASC", nativeQuery = true)
+    Page<Bet> getRiskyBets(String status,Pageable pageable);
 
     @Query(value = "SELECT * FROM bets WHERE account = ?1 ORDER BY created_at ASC", nativeQuery = true)
     Page<Bet> getBonusBets(Pageable pageable,String bonus);
@@ -70,8 +73,8 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     Page<Bet> getPaginatedJackpotBets(String jackpot, Pageable pageable);
 
 
-    @Query(value = "SELECT * FROM bets WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
-    List<Bet> findBetsWithinAWeek(String country,Timestamp now, Timestamp dt);
+    @Query(value = "SELECT * FROM bets WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3 LIMIT 3000", nativeQuery = true)
+    List<Bet> findBetsWithinAWeek(String country, Timestamp now, Timestamp dt);
 
     @Query(value = "SELECT * FROM bets WHERE user_id in ?1", nativeQuery = true)
     List<Bet> findByIds(List<Long> customerIds);

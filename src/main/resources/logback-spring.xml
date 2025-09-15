@@ -5,7 +5,7 @@
 
     <!-- the folder in which the SDK logs will be stored -->
 
-    <property name="CRM_LOGGER" value="${HOME}/staging/crm" />
+    <property name="CRM_LOGGER" value="${HOME}/crm" />
     <!-- TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF -->
     <property name="MTS_SDK_LOG_LEVEL" value="info" />
 

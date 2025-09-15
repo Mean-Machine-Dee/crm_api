@@ -15,10 +15,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -62,8 +59,9 @@ public class AppUtils {
     public Timestamp minusDays(int days) {
         ZoneId zoneId = ZoneId.of( "Africa/Bujumbura" ) ;
         LocalDateTime today = LocalDateTime.now(zoneId);
-        return Timestamp.valueOf(today.minusDays(days));
+        return Timestamp.valueOf(today.minusDays(days).toLocalDate().atStartOfDay());
     }
+
 
     public Timestamp getBurundiTime(){
         Calendar calendar = Calendar.getInstance();
@@ -148,6 +146,23 @@ public class AppUtils {
 
     }
 
+
+    public Timestamp startOfDayTimestamp(String date){
+        ZoneId zoneId = ZoneId.of( "Africa/Bujumbura" ) ;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        ZonedDateTime today = LocalDate.parse(date,formatter).atStartOfDay(zoneId);
+        return Timestamp.valueOf(today.toLocalDateTime());
+    }
+
+    public Timestamp endOfDayTimestamp(String date){
+        ZoneId zoneId = ZoneId.of( "Africa/Bujumbura" ) ;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        ZonedDateTime today = LocalDate.parse(date,formatter).atStartOfDay(zoneId);
+        LocalDateTime tm = today.toLocalDateTime();
+        LocalDateTime localDateTime = tm.toLocalDate().atTime(LocalTime.MAX);
+        return Timestamp.valueOf(localDateTime);
+    }
+
     public String getPRSP(String service, String name) {
         String result = "";
         if(service.equalsIgnoreCase("deposit")){
@@ -175,6 +190,9 @@ public class AppUtils {
                 case "astropay":
                     result = "ASTROPAY";
                     break;
+                case "centwise":
+                    result = "centwise";
+                    break;
                 case "virtual":
                     result = "vp";
                     break;
@@ -197,5 +215,43 @@ public class AppUtils {
         map.put("nextPage", number + 1 > totalPages ? number : number +1);
         return map;
 
+    }
+
+    public String getCurrency(String iso){
+        String currency;
+        switch (iso){
+            case "KE":
+                currency ="KES";
+                break;
+            case "UG":
+                currency ="UGX";
+                break;
+            case "TZ":
+                currency ="TZS";
+                break;
+            case "RW":
+                currency ="RWF";
+                break;
+            case "ZM":
+                currency ="ZMW";
+                break;
+            case "BJ":
+            case "CI":
+                currency ="XOF";
+                break;
+            case "CM":
+                currency ="XAF";
+                break;
+            case "CD":
+                currency ="CDF";
+                break;
+            case "GH":
+                currency ="GHS";
+                break;
+            default:
+                currency ="BIF";
+        }
+
+        return currency;
     }
 }

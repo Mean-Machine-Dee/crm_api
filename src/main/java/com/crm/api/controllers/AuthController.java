@@ -32,10 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -70,6 +67,7 @@ public class AuthController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest){
+        String thumbnail = "";
         Authentication authentication =authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(),loginRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -81,10 +79,15 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        Long expiry = appUtils.addHoursToJavaUtilDate(new Date(),1).getTime();
+        Long expiry = appUtils.addHoursToJavaUtilDate(new Date(),5).getTime();
         logger.info("Expire {}",expiry);
+        Optional<User> user = userRepository.findByEmail(userDetails.getEmail());
+        if(user.isPresent()){
+            logger.info("User is present {}",user.get().getThumbnail());
+            thumbnail =  user.get().getThumbnail();
+        }
         return ResponseEntity.ok(
-                new JwtResponse(jwt,userDetails.getId(),userDetails.getUsername(),userDetails.getEmail(),roles,expiry));
+                new JwtResponse(jwt,userDetails.getId(),userDetails.getUsername(),userDetails.getEmail(),roles,expiry, thumbnail));
     }
 
 

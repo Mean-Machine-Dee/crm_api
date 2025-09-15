@@ -9,8 +9,8 @@ import java.security.Principal;
 
 
 public interface DashboardService {
-    GlobalResponse getTodaysAggregates();
-    GlobalResponse getAggregates();
+    GlobalResponse getTodaysAggregates(String country, String from, String to, String stage);
+    GlobalResponse getAggregates(String country, String from, String to, String stage);
 
     GlobalResponse dispatchMessage(DispatchRequest dispatchRequest, Principal principal);
 
@@ -19,4 +19,10 @@ public interface DashboardService {
     GlobalResponse getDispatches(Pageable pageable);
 
     GlobalResponse getBonusAbusers(String from, String to);
+
+    GlobalResponse getSignUpsByIso(String country, String from, String to, String stage);
+
+    GlobalResponse getSignUps();
+
+    GlobalResponse getSignUpsByCountry(String country);
 }

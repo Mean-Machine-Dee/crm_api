@@ -52,5 +52,7 @@ public interface CustomerService {
 
     GlobalResponse getRate(String from, String to,String iso);
 
-    GlobalResponse getBetsPerSport(String id,String from,String to, Pageable pageable);
+    GlobalResponse getBetsPerSport(String id, String from, String to, Pageable pageable, String country);
+
+    GlobalResponse unlock(Long id, String type);
 }
