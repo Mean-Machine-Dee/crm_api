@@ -59,6 +59,9 @@ public class CustomerServiceImpl implements CustomerService {
     AccountRepository accountRepository;
 
     @Autowired
+    OTPSRepository otpsRepository;
+
+    @Autowired
     PicksRepository picksRepository;
 
 
@@ -194,7 +197,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public GlobalResponse getClientDetails(long id) {
         Customer customer = customerRepository.findById(id);
-        logger.info("customer is {}", customer.getPhone());
+        OTPS otps = otpsRepository.findByUser(customer.getId());
+        logger.info("customer is {} and is {} otp is {}", customer.getPhone(),customer.getId(), otps);
         Map<String, Object> response = new HashMap<>();
         List<ActivityDTO> activityDTOS = null;
         List<Bet> bets = betRepository.getClientBets((int) id);
@@ -228,6 +232,7 @@ public class CustomerServiceImpl implements CustomerService {
             List<Deposit> deposits = depositRepository.userDeposits(customer.getId());
             double totalC2B = deposits.stream().map(Deposit::getAmount).reduce(0.0, Double::sum);
             Account account = customer.getAccount();
+
             CustomerDTO customerDTO = CustomerDTO.builder()
                     .blocked(account.isBlocked())
                     .canWithdraw(account.isBlock_withdraw())
@@ -247,6 +252,7 @@ public class CustomerServiceImpl implements CustomerService {
             response.put("c2b", totalC2B);
             response.put("activities", activityDTOS);
             response.put("details", customerDTO);
+            response.put("otp",otps);
 
             return new GlobalResponse(response, true, false, "client");
         } catch (Exception e) {

@@ -64,7 +64,7 @@ public class FinanceController{
     @GetMapping("lona/submitted")
     public GlobalResponse remmited(@RequestParam(value = "page", defaultValue = "0") int page,
                                    @RequestParam(value = "size", defaultValue = "15") int size){
-        Pageable pageable = PageRequest.of(page,size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page,size);
         return financeService.remitted(pageable);
     }
 
@@ -81,6 +81,20 @@ public class FinanceController{
     @GetMapping("app/counter")
     public GlobalResponse counter(){
         return financeService.getAppCounter();
+    }
+
+    @GetMapping("filter/todays/deposit")
+    public GlobalResponse filterDeposits(@RequestParam(value = "prsp", defaultValue = "na") String prsp,
+                                       @RequestParam(value = "currency", defaultValue = "na") String currency){
+        return financeService.filterTodays(prsp,currency);
+    }
+
+
+
+    @GetMapping("filter/todays/payments")
+    public GlobalResponse filterPayments(@RequestParam(value = "prsp", defaultValue = "na") String prsp,
+                                       @RequestParam(value = "currency", defaultValue = "na") String currency){
+        return financeService.filterPaymentsToDay(prsp,currency);
     }
 
 

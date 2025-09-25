@@ -260,7 +260,7 @@ public class BookieServiceImpl implements BookieService {
     public GlobalResponse getSlides(Pageable pageable) {
         Page<Slide> slides = slideRepository.findAll(pageable);
         if(!slides.isEmpty()){
-          Map<String, Object>  response =   appUtils.dataFormatter(slides.getContent(), slides.getNumber(), slides.getTotalElements(), slides.getTotalPages());
+          Map<String, Object>  response = appUtils.dataFormatter(slides.getContent(), slides.getNumber(), slides.getTotalElements(), slides.getTotalPages());
             return new GlobalResponse(response,true,false, "Slides");
         }
         return new GlobalResponse(null,false,true, "Slides not found" );
@@ -283,7 +283,7 @@ public class BookieServiceImpl implements BookieService {
             } for (String s: slideRequest.getIso()){
                 isos.append(s).append(",");
             }
-            Slide slide = new Slide(0L,appUtils.parseDate(slideRequest.getActionDay()),slideId,name,now,now,false,slideRequest.getLang(),sb.toString(),isos.toString());
+            Slide slide = new Slide(0L,slideId,name,now,now,false,slideRequest.getLang(),sb.toString(),isos.toString());
             slideRepository.save(slide);
             return new GlobalResponse(null,true,false, "Slide uploaded successfully" );
         }catch (Exception e){

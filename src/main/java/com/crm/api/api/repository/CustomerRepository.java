@@ -52,5 +52,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @Query(value = "SELECT COUNT('id') FROM users WHERE iso = ?1", nativeQuery = true)
     Long findCustomersByCountry(String country);
 
-
+    @Query(value = "SELECT COUNT('id') FROM users WHERE iso = ?1 and created_at between ?2 and ?3", nativeQuery = true)
+    Long findByCountryAndDate(String country,Timestamp timestampStart, Timestamp timestampStop);
 }

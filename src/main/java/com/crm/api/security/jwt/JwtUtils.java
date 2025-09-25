@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -30,11 +31,14 @@ public class JwtUtils {
     public String generateJwtToken(Authentication authentication) {
 
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-        Date expiry = appUtils.addHoursToJavaUtilDate(new Date(),1);
+        long nowMillis = System.currentTimeMillis();
+        long expirationMillis = nowMillis + TimeUnit.HOURS.toMillis(1); // 1 hour expiration
+        Date expirationDate = new Date(expirationMillis);
+
         return Jwts.builder()
                 .setSubject((userPrincipal.getEmail()))
                 .setIssuedAt(new Date())
-                .setExpiration(expiry)
+                .setExpiration(expirationDate)
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }

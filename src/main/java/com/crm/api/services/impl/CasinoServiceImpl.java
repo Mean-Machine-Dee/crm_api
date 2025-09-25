@@ -7,6 +7,7 @@ import com.crm.api.api.repository.AviatrixRepository;
 import com.crm.api.api.repository.JetXRepository;
 import com.crm.api.api.repository.PlagmaticRepository;
 import com.crm.api.dtos.CasinoDTO;
+import com.crm.api.dtos.PlagmaticInterface;
 import com.crm.api.payload.response.CasinoResponse;
 import com.crm.api.payload.response.GlobalResponse;
 import com.crm.api.services.CasinoService;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
 public class CasinoServiceImpl implements CasinoService {
 
     private final AppUtils appUtils = new AppUtils();
-   private  CasinoResponse casinoResponses = null;
+
     @Autowired
     private PlagmaticRepository plagmaticRepository;
 
@@ -38,93 +39,50 @@ public class CasinoServiceImpl implements CasinoService {
     @Autowired
     private AviatrixRepository aviatrixRepository;
     @Override
-    public GlobalResponse casinoBets(String provider, Pageable pageable, String country) {
-        log.info("Changing {}", provider);
+    public GlobalResponse casinoBets(String provider, Pageable pageable, String country, String from, String to, String type) {
+        log.info("Changing {} from {} to {} and type {}", provider,from,to,type);
+        Timestamp timestampStart = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampStop = appUtils.endOfDayTimestamp(to);
+        if(type.equalsIgnoreCase("landing")){
+            timestampStart = appUtils.startOfToday();
+            timestampStop = appUtils.getBurundiTime();
+        }
        if(provider.equalsIgnoreCase("plagmatic"))
        {
-           return getPlagmatic(pageable, 0);
+           return getPlagmatic(pageable, country,timestampStart,timestampStop);
           }else if(provider.equalsIgnoreCase("jetx")){
-           return getJetx(pageable, 0);
+           return getJetx(country,timestampStart,timestampStop,pageable);
           }else{
-           return getAviatrix(pageable, 0);
+           return getAviatrix(pageable,country,timestampStart,timestampStop);
        }
      }
 
     @Override
     public GlobalResponse getUserCasinos(long id, String provider, Pageable pageable) {
         if(provider.equalsIgnoreCase("plagmatic")){
-            return getPlagmatic(pageable, id);
+            Page<Plagmatic> plagmatics = plagmaticRepository.findByUserBets(id, pageable);
+            List<CasinoDTO> casinoDTOS = formatPlagmatics(plagmatics);
+            return new GlobalResponse(casinoDTOS,true,false,"User Bets");
         }else if(provider.equalsIgnoreCase("jetx")){
-            return getJetx(pageable,id);
+            Page<JetX> jetXES = jetXRepository.findByUser(id, pageable);
+            List<CasinoDTO> casinoDTOS = formatJetX(jetXES);
+            return new GlobalResponse(casinoDTOS,true,false,"User Bets");
         }else{
-            return getAviatrix(pageable,id);
+            Page<Aviatrix> aviatrixes = aviatrixRepository.findByUserBet(id, pageable);
+            List<CasinoDTO> casinoDTOS = formatAviatrix(aviatrixes);
+            return new GlobalResponse(casinoDTOS,true,false,"User Bets");
+
         }
     }
 
-    @Override
-    public GlobalResponse filterCasinos(String provider, String from, String to, Pageable pageable) {
-        Timestamp start = appUtils.startOfDayTimestamp(from);
-        Timestamp finish = appUtils.endOfDayTimestamp(to);
+
+    private GlobalResponse getJetx(String country,Timestamp timestampStart,Timestamp timestampStop,Pageable pageable) {
         int currentPage = 0;
         int totalPages = 0;
         int nextPage = 0;
         long totalItems = 0;
-        List<CasinoDTO> casinos = new ArrayList<>();
-        if(provider.equalsIgnoreCase("plagmatic")){
-             Page<Plagmatic> plagmatics = plagmaticRepository.findByDate(pageable, start,finish);
-             if(plagmatics != null){
-                 List<CasinoDTO> casinoDTOS = formatPlagmatics(plagmatics);
-                 currentPage = plagmatics.getNumber();
-                 totalPages = plagmatics.getTotalPages();
-                 nextPage = plagmatics.getNumber()+1;
-                 totalItems = plagmatics.getTotalElements();
-                 CasinoResponse casinoResponse = new CasinoResponse(casinos, currentPage, totalPages, nextPage, totalItems);
-                 return new GlobalResponse(casinoResponse, true, false, "plagmatics");
-            }else{
-                 return new GlobalResponse(null, false, true, "No plagmatics");
-             }
-        }else if(provider.equalsIgnoreCase("jetx")){
-            Page<JetX> jetXES = jetXRepository.findByDate(pageable, start,finish);
-       if(jetXES != null){
-           List<CasinoDTO> casinoDTOS = formatJetX(jetXES);
-           currentPage = jetXES.getNumber();
-           totalPages = jetXES.getTotalPages();
-           nextPage = jetXES.getNumber()+1;
-           totalItems = jetXES.getTotalElements();
-           CasinoResponse casinoResponse = new CasinoResponse(casinoDTOS, currentPage, totalPages, nextPage, totalItems);
-           return new GlobalResponse(casinoResponse, true, false, "JetX");
-       }else{
-           return new GlobalResponse(null, false, true, "No JetX Bets ");
-       }
+        Page<JetX> jetXBets = jetXRepository.findBets(country,timestampStart,timestampStop,pageable);
 
-        }else{
-            Page<Aviatrix> aviatrixes = aviatrixRepository.findByDate(pageable, start,finish);
-            if(aviatrixes != null){
-                List<CasinoDTO> casinoDTOS = formatAviatrix(aviatrixes);
-                currentPage = aviatrixes.getNumber();
-                totalPages = aviatrixes.getTotalPages();
-                nextPage = aviatrixes.getNumber()+1;
-                totalItems = aviatrixes.getTotalElements();
-                CasinoResponse casinoResponse = new CasinoResponse(casinoDTOS, currentPage, totalPages, nextPage, totalItems);
-                return new GlobalResponse(casinoResponse, true, false, "Aviatrix");
-            }else{
-                return new GlobalResponse(null, false, true, "No aviatrix bets");
-            }
-        }
-
-    }
-
-    private GlobalResponse getJetx(Pageable pageable, long userId) {
-        int currentPage = 0;
-        int totalPages = 0;
-        int nextPage = 0;
-        long totalItems = 0;
-        Page<JetX> jetXBets = null;
-        if (userId == 0) {
-            jetXBets = jetXRepository.findBets(pageable);
-        } else {
-            jetXBets = jetXRepository.findByUser(userId,pageable);
-        }
         if (jetXBets != null) {
             List<CasinoDTO> casinos = formatJetX(jetXBets);
             currentPage = jetXBets.getNumber();
@@ -148,17 +106,13 @@ public class CasinoServiceImpl implements CasinoService {
     }
 
 
-    private GlobalResponse getPlagmatic(Pageable pageable, long userId){
+    private GlobalResponse getPlagmatic(Pageable pageable,String country, Timestamp timestampStart, Timestamp timestampStop){
         int currentPage = 0;
         int totalPages = 0;
         int nextPage = 0;
         long totalItems = 0;
-        Page<Plagmatic> plagmatics = null;
-        if(userId == 0){
-           plagmatics = plagmaticRepository.findBets(pageable);
-        }else{
-            plagmatics = plagmaticRepository.findByUserBets(userId, pageable);
-        }
+        Page<Plagmatic> plagmatics =  plagmaticRepository.findBets(country,timestampStart,timestampStop,pageable);
+
        if(plagmatics != null){
           List<CasinoDTO> casinos = formatPlagmatics(plagmatics);
            currentPage = plagmatics.getNumber();
@@ -173,32 +127,23 @@ public class CasinoServiceImpl implements CasinoService {
     }
 
     private List<CasinoDTO> formatPlagmatics(Page<Plagmatic> plagmatics) {
-       return plagmatics.getContent().stream()
+        return plagmatics.getContent().stream()
                 .map(plagmatic -> new CasinoDTO("Plagmatic",
                         plagmatic.getGameId(),plagmatic.getAmount(),
-                        plagmatic.getAmountWon(),plagmatic.getStatus(), plagmatic.getWon(),
+                        plagmatic.getAmountWon()/100,plagmatic.getStatus(), plagmatic.getWon(),
                         plagmatic.getCreatedAt(),plagmatic.getResultedAt(), 1.0,
                         "BIF",plagmatic.getUserId()))
                 .collect(Collectors.toList());
+
     }
 
-    private GlobalResponse getAviatrix(Pageable pageable, long userId){
+    private GlobalResponse getAviatrix(Pageable pageable,String country, Timestamp timestampStart, Timestamp timestampStop){
         int currentPage = 0;
         int totalPages = 0;
         int nextPage = 0;
         long totalItems = 0;
-        Page<Aviatrix> aviatorBets = null;
-
-        if(userId == 0){
-            log.info("Aviator bets {}",userId);
-
-            aviatorBets = aviatrixRepository.findBets(pageable);
-        }else{
-            aviatorBets = aviatrixRepository.findByUserBet(userId, pageable);
-        }
-
+        Page<Aviatrix> aviatorBets =  aviatrixRepository.findBets(country,timestampStart,timestampStop,pageable);
         log.info("Aviator {}", aviatorBets.isEmpty());
-
        if(!aviatorBets.isEmpty()){
            List<CasinoDTO> casinos = formatAviatrix(aviatorBets);
            currentPage = aviatorBets.getNumber();

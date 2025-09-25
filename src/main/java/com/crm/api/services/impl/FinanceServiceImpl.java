@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -178,7 +179,6 @@ public class FinanceServiceImpl implements FinanceService {
            finish = appUtils.startOfToday();
         }
 
-        log.info("GETTING FROM {} to {}",start,finish);
         double excise = 0;
         double holding = 0;
         double won = 0;
@@ -262,7 +262,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     public GlobalResponse remitted(Pageable pageable) {
-        Page<Submission> submissions = submissionRepository.findAll(pageable);
+        Page<Submission> submissions = submissionRepository.findAllData(pageable);
         if(!submissions.isEmpty()){
            Map<String,Object> response =  appUtils.dataFormatter(submissions.getContent(),
                     submissions.getNumber(),
@@ -357,6 +357,57 @@ public class FinanceServiceImpl implements FinanceService {
         List<Setting> settings = settingRepository.getAll();
         return new GlobalResponse(settings, true,false,"Payments service");
     }
+    @Override
+    public GlobalResponse filterPaymentsToDay(String prsp, String currency) {
+
+        Timestamp start = appUtils.startOfToday();
+        Timestamp stop = appUtils.getBurundiTime();
+        Timestamp months = appUtils.minusDays(90);
+        log.info("Filter payments {} {} {} {}",prsp,currency,start,stop);
+        Double today;
+        Double total;
+        String td = "today";
+        String all = "allTime";
+
+        Map<String,Double> response  = new HashMap<>();
+        if(!currency.equalsIgnoreCase("na") && prsp.equalsIgnoreCase("na")){
+            today = paymentRepository.getWithdrawByCurrency(currency,start,stop);
+            total = paymentRepository.findAllTimeCurrency(currency,months,start);
+            response.put(td,today);
+            response.put(all,total);
+        }
+
+        if(!prsp.equalsIgnoreCase("na") && currency.equalsIgnoreCase("na")){
+            today = paymentRepository.findPrsp(prsp,start,stop);
+            total = paymentRepository.findAllTimePrsp(prsp,months,start);
+            response.put(td,today);
+            response.put(all,total);
+        }
+        return new GlobalResponse(response, true,false,"Todays Payments");
+    }
+    @Override
+    public GlobalResponse filterTodays(String prsp, String currency) {
+        Timestamp start = appUtils.startOfToday();
+        Timestamp stop = appUtils.getBurundiTime();
+        double today = 0;
+        double total = 0;
+        Map<String,Double> response  = new HashMap<>();
+        if(!currency.equalsIgnoreCase("na") && prsp.equalsIgnoreCase("na")){
+            today = depositRepository.getDepositCurrency(currency,start,stop);
+            total = depositRepository.allTimeCurrency(currency);
+            response.put("today",today);
+            response.put("total",total);
+        }
+
+        if(!prsp.equalsIgnoreCase("na") && currency.equalsIgnoreCase("na")){
+           today = depositRepository.findByTelcoBetween(prsp,start,stop);
+           total = depositRepository.allTimePrsp(prsp);
+            response.put("today",today);
+            response.put("total",total);
+        }
+        return new GlobalResponse(response, true,false,"Todays Deposit");
+    }
+
 
 
     private Double withoutTax(double payout, double withHolding, int stake, double excise) {
@@ -364,6 +415,8 @@ public class FinanceServiceImpl implements FinanceService {
         double odds = withoutWH / stake;
         return (stake + excise) * odds;
     }
+
+
 
     @Override
     public GlobalResponse filterDepositsByPSP(PSPRequest search) {

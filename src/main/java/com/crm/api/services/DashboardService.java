@@ -18,11 +18,11 @@ public interface DashboardService {
 
     GlobalResponse getDispatches(Pageable pageable);
 
-    GlobalResponse getBonusAbusers(String from, String to);
+    GlobalResponse getBonusAbusers(String from, String to, String country);
 
     GlobalResponse getSignUpsByIso(String country, String from, String to, String stage);
 
-    GlobalResponse getSignUps();
+    GlobalResponse getSignUps(String country, String from, String to);
 
     GlobalResponse getSignUpsByCountry(String country);
 }

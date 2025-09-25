@@ -11,7 +11,6 @@ public interface SettingRepository extends JpaRepository<Setting, Long> {
     @Query(value = "SELECT * from global WHERE prsp = ?1", nativeQuery = true)
     List<Setting> findByPRSPName(String service);
 
-
-    @Query(value = "SELECT * from global ORDER BY id DESC", nativeQuery = true)
+    @Query(value = "SELECT * from global ORDER BY country ASC", nativeQuery = true)
     List<Setting> getAll();
 }

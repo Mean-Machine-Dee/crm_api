@@ -16,6 +16,10 @@ public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
     @Query(value="SELECT * FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3",nativeQuery = true)
     List<Withdrawals> getWithdrawals(String iso,Timestamp startOfToday, Timestamp stop);
 
+
+    @Query(value="SELECT * FROM payments WHERE iso = ?1 AND trans_date between ?2 AND ?3",nativeQuery = true)
+    List<Withdrawals> getPaymentByIso(String iso,Timestamp startOfToday, Timestamp stop);
+
     @Query(value="SELECT * FROM payments WHERE phone = ?1 ORDER BY created_at DESC",nativeQuery = true)
     List<Withdrawals> userB2c(String phone);
 
@@ -41,4 +45,16 @@ public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
 
     @Query(value = "SELECT SUM(`amount`) FROM payments where trans_date BETWEEN ?1 AND ?2", nativeQuery = true)
     Double findTotalBetween(Timestamp timestamp, Timestamp stopDate);
+
+    @Query(value = "SELECT SUM(`amount`) FROM payments where currency = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
+    Double getWithdrawByCurrency(String currency, Timestamp start, Timestamp stop);
+
+    @Query(value = "SELECT SUM(`amount`) FROM payments where currency = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
+    Double findAllTimeCurrency(String currency, Timestamp months, Timestamp start);
+
+    @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
+    Double findPrsp(String prsp, Timestamp start, Timestamp stop);
+
+    @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
+    Double findAllTimePrsp(String prsp, Timestamp months, Timestamp start);
 }

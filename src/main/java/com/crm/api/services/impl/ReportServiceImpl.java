@@ -1,10 +1,9 @@
 package com.crm.api.services.impl;
 
-import com.crm.api.api.models.Bet;
-import com.crm.api.api.models.Deposit;
-import com.crm.api.api.models.Withdrawals;
+import com.crm.api.api.models.*;
 import com.crm.api.api.repository.BetRepository;
 import com.crm.api.api.repository.DepositRepository;
+import com.crm.api.api.repository.FriendRepository;
 import com.crm.api.api.repository.WithdrawRepository;
 import com.crm.api.payload.requests.LonaRequest;
 import com.crm.api.payload.response.GlobalResponse;
@@ -12,6 +11,8 @@ import com.crm.api.services.ReportService;
 import com.crm.api.utils.AppUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -30,6 +31,10 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private DepositRepository depositRepository;
+
+
+    @Autowired
+    private FriendRepository friendRepository;
 
 
     @Autowired
@@ -59,8 +64,9 @@ public class ReportServiceImpl implements ReportService {
 
             //search todays
            try{
-               List<Deposit> deposits = depositRepository.getDepositBetween(from,to);
-               List<Withdrawals> withdrawals = withdrawRepository.getWithdrawalBetween(from,to);
+               String currency = appUtils.getCurrency(providerRequest.getCountry());
+               List<Deposit> deposits = depositRepository.getDepositTimeFrameCurrency(currency,from,to);
+               List<Withdrawals> withdrawals = withdrawRepository.getPaymentByIso(providerRequest.getCountry(),from,to);
                globalResponse = providerCollection(deposits, withdrawals);
            }catch (Exception e){
                log.info("Error on providerReport {}", e.getMessage());
@@ -69,6 +75,32 @@ public class ReportServiceImpl implements ReportService {
 
 
         return globalResponse;
+    }
+
+    @Override
+    public GlobalResponse getAffiliates(String from, String to, String type, Pageable pageable, String country) {
+        Timestamp start = appUtils.startOfDayTimestamp(from);
+        Timestamp finish = appUtils.endOfDayTimestamp(to);
+        if(type.equalsIgnoreCase("landing")){
+            start = appUtils.minusDays(1);
+            finish = appUtils.startOfToday();
+        }
+        Page<Customer> friends = friendRepository.findByCountryAndDate(start,finish,country,pageable);
+        Map<String, List<Customer>> data = friends.getContent().stream().collect(Collectors.groupingBy(Customer::getIso));
+        return new GlobalResponse(data, true,false, "Data");
+    }
+
+    @Override
+    public GlobalResponse getAffiliate(Long id) {
+        List<Friend> friendList = friendRepository.getAllInvitees(id);
+        Map<String,Double> list = new HashMap<>();
+        for (Friend friend: friendList){
+            Deposit deposit = depositRepository.getFirstDeposit(friend.getInvitee());
+            if(deposit != null){
+                list.put(deposit.getPhone(),deposit.getAmount());
+            }
+        }
+        return new GlobalResponse(list, true,false, "Data");
     }
 
     private GlobalResponse providerCollection(List<Deposit> deposits, List<Withdrawals> withdrawals) {

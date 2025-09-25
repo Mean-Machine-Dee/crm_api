@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/crm/dashboard/")
+
 public class DashboardController {
 
     @Autowired
@@ -49,8 +50,10 @@ public class DashboardController {
     }
 
     @GetMapping("signups/count")
-    public GlobalResponse signupsCount(){
-        return dashboardService.getSignUps();
+    public GlobalResponse signupsCount(@RequestParam(name = "country") String country,
+                                       @RequestParam(name = "from") String from,
+                                       @RequestParam(name = "to") String to){
+        return dashboardService.getSignUps(country,from,to);
     }
 
     @GetMapping("signups/country")
@@ -77,8 +80,9 @@ public class DashboardController {
     }
 
     @GetMapping("bonus/abusers")
-    public GlobalResponse bonusAbusers(@RequestParam(name = "from") String from, @RequestParam(name = "to") String to){
-        return dashboardService.getBonusAbusers(from,to);
+    public GlobalResponse bonusAbusers(@RequestParam(name = "from") String from, @RequestParam(name = "to") String to,
+                                       @RequestParam(name = "country") String country){
+        return dashboardService.getBonusAbusers(from,to,country);
     }
 
 

@@ -10,7 +10,6 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 public class SlideRequest {
-    private String actionDay;
     private String lang;
     private List<String> category;
     private List<String> iso;

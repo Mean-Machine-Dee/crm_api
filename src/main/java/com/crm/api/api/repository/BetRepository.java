@@ -52,8 +52,8 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     @Query(value = "SELECT * FROM bets WHERE is_review = 1 AND status = 0 AND status = ?1 ORDER BY created_at ASC", nativeQuery = true)
     Page<Bet> getRiskyBets(String status,Pageable pageable);
 
-    @Query(value = "SELECT * FROM bets WHERE account = ?1 ORDER BY created_at ASC", nativeQuery = true)
-    Page<Bet> getBonusBets(Pageable pageable,String bonus);
+//    @Query(value = "SELECT * FROM bets WHERE account = ?1 and iso =?2 ORDER BY created_at ASC", nativeQuery = true)
+//    Page<Bet> getBonusBets(Pageable pageable,String bonus, String iso);
 
     @Query(value = "SELECT * FROM bets WHERE bet_code = ?1 AND status = 0", nativeQuery = true)
     Bet findByBetCode(String code);
@@ -61,8 +61,8 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     List<String> findUserPhones(Timestamp now, Timestamp to);
 
 
-    @Query(value = "SELECT * FROM bets WHERE account =?1 AND created_at BETWEEN ?2 AND ?3 ORDER BY created_at ASC", nativeQuery = true)
-    List<Bet> getBonusBets(String bonus,String from, String to);
+    @Query(value = "SELECT * FROM bets WHERE account =?1 AND iso=?2 AND created_at BETWEEN ?3 AND ?4 ORDER BY created_at ASC", nativeQuery = true)
+    List<Bet> getBonusBets(String bonus,String country,String from, String to);
 
 
     @Query(value = "SELECT * FROM bets WHERE account =?1 AND iso =?2 AND created_at BETWEEN ?3 AND ?4 ORDER BY created_at ASC", nativeQuery = true)

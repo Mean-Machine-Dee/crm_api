@@ -29,4 +29,8 @@ public interface FinanceService {
     GlobalResponse filterCashflow(String type);
 
     GlobalResponse getPaymentSettings();
+
+    GlobalResponse filterTodays(String prsp, String currency);
+
+    GlobalResponse filterPaymentsToDay(String prsp, String currency);
 }

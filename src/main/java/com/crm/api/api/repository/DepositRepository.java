@@ -57,4 +57,18 @@ public interface DepositRepository extends JpaRepository<Deposit,Long> {
 
     @Query(value = "SELECT * FROM deposits where user_id in ?1 ", nativeQuery = true)
     List<Deposit> getByIds(List<Long> customerIds);
+
+    @Query(value="SELECT * FROM deposits WHERE user_id = ?1 ORDER BY created_at ASC LIMIT 1",nativeQuery = true)
+   Deposit getFirstDeposit(Long id);
+
+    @Query(value = "SELECT SUM(`amount`) FROM deposits where currency = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
+    Integer getDepositCurrency(String currency, Timestamp start, Timestamp stop);
+
+
+    @Query(value = "SELECT SUM(`amount`) FROM deposits where currency = ?1", nativeQuery = true)
+    Double allTimeCurrency(String currency);
+
+
+    @Query(value = "SELECT SUM(`amount`) FROM deposits where telco = ?1 ", nativeQuery = true)
+    Double allTimePrsp(String prsp);
 }

@@ -196,8 +196,8 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public GlobalResponse getBonusAbusers(String from, String to) {
-       List<Bet> bets = betRepository.getBonusBets("bonus",from,to);
+    public GlobalResponse getBonusAbusers(String from, String to, String country) {
+       List<Bet> bets = betRepository.getBonusBets("bonus",country,from,to);
        if(!bets.isEmpty()){
            Map<Long, Integer> mapped = bets.stream().collect(Collectors.groupingBy(Bet::getUserId, Collectors.reducing(0, Bet::getAmount, Integer::sum)));
            Map<String, Object> stringObjectMap = appUtils.dataFormatter(mapped, 0, 0, 0);
@@ -224,8 +224,10 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public GlobalResponse getSignUps() {
-        Long customers = customerRepository.count();
+    public GlobalResponse getSignUps(String country, String from, String to) {
+        Timestamp timestampStart = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampStop = appUtils.endOfDayTimestamp(to);
+        Long customers = customerRepository.findByCountryAndDate(country,timestampStart,timestampStop);
         return new GlobalResponse(customers,true,false,"All time customers");
     }
 

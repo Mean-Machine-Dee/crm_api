@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -79,15 +80,17 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        Long expiry = appUtils.addHoursToJavaUtilDate(new Date(),5).getTime();
-        logger.info("Expire {}",expiry);
+        long nowMillis = System.currentTimeMillis();
+        long expirationMillis = nowMillis + TimeUnit.HOURS.toMillis(1); // 1 hour expiration
+
+        logger.info("Expire {}",expirationMillis);
         Optional<User> user = userRepository.findByEmail(userDetails.getEmail());
         if(user.isPresent()){
             logger.info("User is present {}",user.get().getThumbnail());
             thumbnail =  user.get().getThumbnail();
         }
         return ResponseEntity.ok(
-                new JwtResponse(jwt,userDetails.getId(),userDetails.getUsername(),userDetails.getEmail(),roles,expiry, thumbnail));
+                new JwtResponse(jwt,userDetails.getId(),userDetails.getUsername(),userDetails.getEmail(),roles,expirationMillis, thumbnail));
     }
 
 

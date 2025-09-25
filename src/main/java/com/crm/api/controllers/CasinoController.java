@@ -23,12 +23,15 @@ public class CasinoController {
     @GetMapping("bets")
     public GlobalResponse getCasinoBets(@RequestParam(name = "provider", defaultValue = "pragmatic") String provider,
                                         @RequestParam(name = "country", defaultValue = "BI") String country,
+                                        @RequestParam(name = "from", defaultValue = "from") String from,
+                                        @RequestParam(name = "to", defaultValue = "to") String to,
                                         @RequestParam(name = "page", defaultValue = "0") int page,
-                                        @RequestParam(name = "size", defaultValue = "15") int size
+                                        @RequestParam(name = "size", defaultValue = "15") int size,
+                                        @RequestParam(name = "type", defaultValue = "landing") String type
     ) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("created_at").descending());
-        return service.casinoBets(provider, pageable,country);
+        return service.casinoBets(provider, pageable,country,from,to,type);
     }
 
 
@@ -42,15 +45,5 @@ public class CasinoController {
     }
 
 
-    @GetMapping("filter")
-    public GlobalResponse filterByDate(@RequestParam(name = "provider", defaultValue = "pragmatic") String provider,
-                                       @RequestParam(name = "from", defaultValue = "from") String from,
-                                       @RequestParam(name = "to", defaultValue = "to") String to,
-                                       @RequestParam(name = "page", defaultValue = "0") int page,
-                                       @RequestParam(name = "size", defaultValue = "15") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("created_at").descending());
-        return service.filterCasinos(provider, from, to, pageable);
 
-    }
 }

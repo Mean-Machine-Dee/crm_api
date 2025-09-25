@@ -17,8 +17,6 @@ public class Slide {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "action_day")
-    private LocalDateTime actionDay;
     @Column(name = "slides_id")
     private String slideId;
     private String name;
