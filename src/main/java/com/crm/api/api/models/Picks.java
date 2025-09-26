@@ -33,6 +33,7 @@ public class Picks {
     private String specifier;
     private String pick_name;
     private String sport;
+    private boolean voided;
 
 
 

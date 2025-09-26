@@ -28,12 +28,10 @@ public class JwtUtils {
     @Value("${crm.app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
-    public String generateJwtToken(Authentication authentication) {
 
+    public String generateJwtToken(Authentication authentication) {
+        appUtils.getBurundiTime() + jwtExpirationMs;
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-        long nowMillis = System.currentTimeMillis();
-        long expirationMillis = nowMillis + TimeUnit.HOURS.toMillis(1); // 1 hour expiration
-        Date expirationDate = new Date(expirationMillis);
 
         return Jwts.builder()
                 .setSubject((userPrincipal.getEmail()))

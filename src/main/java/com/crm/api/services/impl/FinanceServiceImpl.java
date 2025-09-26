@@ -107,48 +107,55 @@ public class FinanceServiceImpl implements FinanceService {
         Map<String,Object> response = new HashMap<>();
         Timestamp start = appUtils.startOfDayTimestamp(search.getFrom());
         Timestamp finish = appUtils.endOfDayTimestamp(search.getTo());
-//        GlobalResponse globalResponse;
 
-//        if(search.getCurrency() != null){
-//            try{
-//                Double deposit = paymentRepository.findByCurrency(search.getCurrency(),start,finish);
-//                List<Deposit> list = depositRepository.getDepositTimeFrameCurrency(search.getCurrency(), start,finish);
-//                response.put("deposits", list);
-//                response.put("total", deposit);
-//                globalResponse = new GlobalResponse(response, true,false,"success");
-//            }catch (Exception e){
-//                log.info("currency is {}", e.getMessage());
-//                globalResponse =  new GlobalResponse(e.getMessage(), false,true,"failed");
-//            }
-//        }else{
-//            try{
-//                String prspDeposit = appUtils.getPRSP("deposit", search.getName());
-//                log.info("PRSP is {}", prspDeposit);
-//                deposits = depositRepository.findByTelcoBetween(prspDeposit,start,finish);
-//                List<Deposit> list = depositRepository.getDepositTimeFrame(prspDeposit,start,finish);
-//                response.put("deposits", list);
-//                response.put("total", deposits);
-//                globalResponse = new GlobalResponse(response, true,false,"success");
-//            }catch (Exception e){
-//                log.info("Logger {}", e.getMessage());
-//                globalResponse =  new GlobalResponse(e.getMessage(), false,true,"failed");
-//            }
-//        }
-
-
-
-        try{
+        if(!search.getName().equalsIgnoreCase("n/a") && search.getCurrency().equalsIgnoreCase("n/a") ){
             String prsp = appUtils.getPRSP("payment", search.getName());
-            log.info("PRSP is {} from {} to {}", prsp,start,finish);
-            Double paid = paymentRepository.findByTelcoBetween(prsp,start,finish);
-            List<Withdrawals> withdrawals = paymentRepository.getWithdrawalTimeFrame(prsp,start,finish);
-            response.put("payments", withdrawals);
-            response.put("total", paid);
-            return new GlobalResponse(response, true,false,"success");
-        }catch (Exception e){
-            log.info("Logger {}", e.getMessage());
-            return new GlobalResponse(e.getMessage(), false,true,"failed");
+            try{
+                Double paid = paymentRepository.findPrspSum(search.getName(),start,finish);
+                log.info("paid is {}", paid);
+                List<Withdrawals> withdrawals = paymentRepository.getWithdrawalTimeFrame(prsp,start,finish);
+                response.put("payments", withdrawals);
+                response.put("total", paid);
+                return new GlobalResponse(response, true,false,"success");
+            }catch (Exception e){
+                log.info("prsp not found is {}", e.getMessage());
+                return new GlobalResponse(e.getMessage(), false,true,"failed");
+            }
+        }else{
+            try{
+                Double paid = paymentRepository.findPrspByCurrency(search.getCurrency(),start,finish);
+                log.info("currency paid is {}", paid);
+                List<Withdrawals> withdrawals = paymentRepository.getCurrencyWithdrawalBetween(search.getCurrency(),start,finish);
+                response.put("payments", withdrawals);
+                response.put("total", paid);
+                return new GlobalResponse(response, true,false,"success");
+            }catch (Exception e){
+                log.info("currency not found is {}", e.getMessage());
+                return new GlobalResponse(e.getMessage(), false,true,"failed");
+            }
         }
+
+
+
+
+
+
+
+
+
+
+//        try{
+//            String prsp = appUtils.getPRSP("payment", search.getName());
+//            log.info("PRSP is {} from {} to {}", prsp,start,finish);
+//            Double paid = paymentRepository.findByTelcoBetween(prsp,start,finish);
+//            List<Withdrawals> withdrawals = paymentRepository.getWithdrawalTimeFrame(prsp,start,finish);
+//            response.put("payments", withdrawals);
+//            response.put("total", paid);
+//            return new GlobalResponse(response, true,false,"success");
+//        }catch (Exception e){
+//            log.info("Logger {}", e.getMessage());
+//            return new GlobalResponse(e.getMessage(), false,true,"failed");
+//        }
     }
 
     @Override
@@ -378,7 +385,7 @@ public class FinanceServiceImpl implements FinanceService {
         }
 
         if(!prsp.equalsIgnoreCase("na") && currency.equalsIgnoreCase("na")){
-            today = paymentRepository.findPrsp(prsp,start,stop);
+            today = paymentRepository.findPrspSum(prsp,start,stop);
             total = paymentRepository.findAllTimePrsp(prsp,months,start);
             response.put(td,today);
             response.put(all,total);

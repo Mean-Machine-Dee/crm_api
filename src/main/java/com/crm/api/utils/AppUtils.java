@@ -180,7 +180,7 @@ public class AppUtils {
                     result = "vp";
                     break;
                 default:
-                    result = "lumitel";
+                    result = "BI";
                     break;
             }
         }

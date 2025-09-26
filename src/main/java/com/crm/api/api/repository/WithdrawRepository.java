@@ -35,10 +35,10 @@ public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
     @Query(value="SELECT * FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3 ORDER BY amount ASC LIMIT 15",nativeQuery = true)
     List<Withdrawals> getWithdrawalTimeFrame(String prsp,Timestamp startOfToday, Timestamp stop);
 
-    @Query(value="SELECT * FROM payments WHERE trans_date between ?1 AND ?2 ",nativeQuery = true)
-    List<Withdrawals> getWithdrawalBetween(Timestamp startOfToday, Timestamp stop);
+    @Query(value="SELECT * FROM payments WHERE currency = ?1 and trans_date between ?2 AND ?3 ",nativeQuery = true)
+    List<Withdrawals> getCurrencyWithdrawalBetween(String currency, Timestamp startOfToday, Timestamp stop);
 
-    @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 AND trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
+    @Query(value = "SELECT SUM(`amount`) FROM payments where currency = ?1 AND trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
     Double findByCurrency(String currency, Timestamp start, Timestamp finish);
     @Query(value = "SELECT SUM(`amount`) FROM payments", nativeQuery = true)
     Double findAllTime();
@@ -52,9 +52,13 @@ public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
     @Query(value = "SELECT SUM(`amount`) FROM payments where currency = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
     Double findAllTimeCurrency(String currency, Timestamp months, Timestamp start);
 
-    @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
-    Double findPrsp(String prsp, Timestamp start, Timestamp stop);
+    @Query(value = "SELECT SUM(`amount`) FROM payments WHERE currency = ?1 AND trans_date between ?2 AND ?3", nativeQuery = true)
+    Double findPrspByCurrency(String prsp, Timestamp start, Timestamp stop);
 
     @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 and trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
     Double findAllTimePrsp(String prsp, Timestamp months, Timestamp start);
+
+
+    @Query(value = "SELECT SUM(`amount`) FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3", nativeQuery = true)
+    Double findPrspSum(String prsp, Timestamp start, Timestamp stop);
 }
