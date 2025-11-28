@@ -42,12 +42,16 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     Page<Bet> getPagedClientBets(long id, Pageable page);
 
 
-    @Query(value="SELECT * FROM bets WHERE iso=?1 AND type =?2 ORDER BY created_at DESC", nativeQuery = true)
-    Page<Bet> getPaginatedBets(String iso,String normal,Pageable page);
+    @Query(value="SELECT * FROM bets WHERE iso=?1 AND type =?2 AND created_at BETWEEN ?3 AND ?4 ORDER BY created_at DESC", nativeQuery = true)
+    Page<Bet> getPaginatedBets(String iso, String normal, Timestamp timestampFrom, Timestamp timestampEnd, Pageable page);
 
 //    Optional<Bet> findByBetCode(int code);
     @Query(value="SELECT * FROM bets WHERE iso=?1 AND bet_code Like %?2% ORDER BY created_at DESC", nativeQuery = true)
-    Page<Bet> findByBetCode(String iso,String code, Pageable pageable);
+    Page<Bet> findByBetCode(String iso, String code, Pageable pageable);
+
+
+    @Query(value="SELECT * FROM bets WHERE iso=?1 AND bet_code Like %?2% AND created_at BETWEEN ?3 AND ?4 ORDER BY created_at DESC", nativeQuery = true)
+    Page<Bet> findByBetCodeAndCountry(String iso, String code, Timestamp timestampFrom, Timestamp timestampEnd, Pageable pageable);
 
     @Query(value = "SELECT * FROM bets WHERE is_review = 1 AND status = 0 AND status = ?1 ORDER BY created_at ASC", nativeQuery = true)
     Page<Bet> getRiskyBets(String status,Pageable pageable);
@@ -69,8 +73,8 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
     Page<Bet> getBonusBetsPerCountry(String bonus,String country,Timestamp from, Timestamp to, Pageable pageable);
 
 
-    @Query(value="SELECT * FROM bets WHERE type = ?1 ORDER BY created_at DESC", nativeQuery = true)
-    Page<Bet> getPaginatedJackpotBets(String jackpot, Pageable pageable);
+    @Query(value="SELECT * FROM bets WHERE type = ?1 AND created_at BETWEEN ?2 AND ?3 ORDER BY created_at DESC", nativeQuery = true)
+    Page<Bet> getPaginatedJackpotBets(String jackpot, Timestamp timestampFrom, Timestamp timestampEnd, Pageable pageable);
 
 
     @Query(value = "SELECT * FROM bets WHERE iso = ?1 AND created_at BETWEEN ?2 AND ?3 LIMIT 3000", nativeQuery = true)
@@ -78,4 +82,10 @@ public interface BetRepository extends JpaRepository<Bet, Long> {
 
     @Query(value = "SELECT * FROM bets WHERE user_id in ?1", nativeQuery = true)
     List<Bet> findByIds(List<Long> customerIds);
+
+    @Query(value = "SELECT COUNT(`id`) FROM bets WHERE type = ?1 AND status=0",nativeQuery = true)
+    Integer getJackpots(String jackpot);
+
+    @Query(value="SELECT * FROM bets WHERE jackpot_id = ?1", nativeQuery = true)
+    List<Bet> findByJackpotId(Long id);
 }

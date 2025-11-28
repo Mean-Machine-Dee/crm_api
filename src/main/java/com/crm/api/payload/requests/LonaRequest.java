@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 public class LonaRequest {
     private String from;
     private String to;
+    private String type;
     private String country;
 }

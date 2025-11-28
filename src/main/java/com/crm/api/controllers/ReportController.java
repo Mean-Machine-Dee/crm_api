@@ -36,8 +36,7 @@ public class ReportController {
                                       @RequestParam(value = "page",defaultValue = "0") int page,
                                      @RequestParam(value = "size", defaultValue = "15") int size){
         Pageable pageable = PageRequest.of(page,size);
-        return
-                reportService.getAffiliates(from,to,type,pageable,country);
+        return reportService.getAffiliates(from,to,type,pageable,country);
 
     }
 
@@ -45,6 +44,12 @@ public class ReportController {
     public GlobalResponse getAffiliate(@PathVariable(value = "id", name = "id") Long id){
         return reportService.getAffiliate(id);
     }
+
+    @GetMapping("jackpot/report")
+    public GlobalResponse getJackpotReport(){
+        return reportService.getJackpotReport();
+    }
+
 
 
 

@@ -26,7 +26,7 @@ public interface CustomerService {
 
     GlobalResponse b2c(WithdrawRequest request, Principal principal);
 
-    GlobalResponse profile(ProfileRequest request);
+    GlobalResponse profile(ProfileRequest request, Principal principal);
 
     GlobalResponse createTicket(TicketRequest ticketDTO, Principal principal);
 
@@ -38,7 +38,7 @@ public interface CustomerService {
 
     GlobalResponse getBetPicks(int id);
 
-    GlobalResponse verifyClient(long id);
+    GlobalResponse verifyClient(long id, Principal principal);
 
     GlobalResponse settleBulk(MultipartFile file, String type);
 
@@ -54,5 +54,11 @@ public interface CustomerService {
 
     GlobalResponse getBetsPerSport(String id, String from, String to, Pageable pageable, String country);
 
-    GlobalResponse unlock(Long id, String type);
+    GlobalResponse unlock(Long id, String type,String username);
+
+    GlobalResponse cancelBet(long id);
+
+    GlobalResponse agentsViewData(long id, Pageable pageable);
+
+
 }

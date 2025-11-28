@@ -37,4 +37,6 @@ public class Campaign {
     private String header;
     @Column(name = "sub_header")
     private String subHeader;
+    @Column(name = "expiry_date")
+    private LocalDateTime expiryDate;
 }

@@ -1,26 +1,17 @@
-package com.crm.api.api.models;
+package com.crm.api.dtos;
 
-
-import com.crm.api.sdk.entities.SrScore;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-import javax.persistence.*;
 import java.sql.Timestamp;
 
-@Table(name = "bet_matches")
-@Entity
-@Setter
-@Getter
 @AllArgsConstructor
 @NoArgsConstructor
-
-public class Picks {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Data
+@Builder
+public class PickDto {
     private Long sr_competition_id;
     private Long sr_market_id;
     private String market_name;
@@ -36,6 +27,5 @@ public class Picks {
     private String pick_name;
     private String sport;
     private boolean voided;
-
-
+    private String score;
 }

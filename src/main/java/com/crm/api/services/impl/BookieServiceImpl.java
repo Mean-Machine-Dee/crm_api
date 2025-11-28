@@ -6,14 +6,8 @@ import com.crm.api.api.models.SmsDelivery;
 import com.crm.api.api.repository.BetRepository;
 import com.crm.api.api.repository.OddBoosterRepository;
 import com.crm.api.api.repository.SmsDeliverlyRepository;
-import com.crm.api.crm.models.Campaign;
-import com.crm.api.crm.models.Jackpot;
-import com.crm.api.crm.models.JackpotGame;
-import com.crm.api.crm.models.Slide;
-import com.crm.api.crm.repository.CampaignRepository;
-import com.crm.api.crm.repository.JackpotMatchRepository;
-import com.crm.api.crm.repository.JackpotRepository;
-import com.crm.api.crm.repository.SlideRepository;
+import com.crm.api.crm.models.*;
+import com.crm.api.crm.repository.*;
 import com.crm.api.dtos.*;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
@@ -51,7 +45,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.Principal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -89,8 +85,15 @@ public class BookieServiceImpl implements BookieService {
     SrSportRepository sportRepository;
     @Autowired
     JackpotMatchRepository jackpotMatchRepository;
+
+    @Autowired
+    UserRepository userRepository;
     @Autowired
     private BetRepository betRepository;
+
+    @Autowired
+    private AgentActivityRepository agentActivityRepository;
+
 
     @Autowired
     private SmsDeliverlyRepository smsDeliverlyRepository;
@@ -175,12 +178,19 @@ public class BookieServiceImpl implements BookieService {
 
     @Override
     @Transactional(transactionManager = "apiDbTransactionManager")
-    public GlobalResponse bets(Pageable pageable, String code, String country) {
+    public GlobalResponse bets(Pageable pageable, String code, String country, String type, String to, String from) {
+
+        Timestamp timestampFrom = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampEnd = appUtils.endOfDayTimestamp(to);
+        if(type.equalsIgnoreCase("landing")){
+            timestampFrom = appUtils.startOfToday();
+            timestampEnd = appUtils.getBurundiTime();
+        }
         Page<Bet> paginatedBets = null;
         if(code.equalsIgnoreCase("all")){
-            paginatedBets = betRepository.getPaginatedBets(country,"normal",pageable);
+            paginatedBets = betRepository.getPaginatedBets(country,"normal",timestampFrom,timestampEnd,pageable);
         }else{
-            paginatedBets = betRepository.findByBetCode(country,code, pageable);
+            paginatedBets = betRepository.findByBetCodeAndCountry(country,code,timestampFrom,timestampEnd, pageable);
         }
 
         log.info("Got Data {}", paginatedBets);
@@ -421,13 +431,16 @@ public class BookieServiceImpl implements BookieService {
     }
 
     @Override
-    public GlobalResponse createCampaign(MultipartFile file, CampaignRequest campaignRequest) {
+    public GlobalResponse createCampaign(MultipartFile file, CampaignRequest campaignRequest, Principal principal) {
+        User user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
         log.info("Campaign data parsed");
         try{
             String name = file.getOriginalFilename();
             if(name != null){
                 name = UUID.randomUUID() + "." + name.substring(name.lastIndexOf(".") + 1);
             }
+            LocalDateTime expiryDate = campaignRequest.getExpiryDay() != null ? appUtils.parseDate(campaignRequest.getExpiryDay()) : null;
+
             saveImage(file, name);
             Timestamp now = new Timestamp(System.currentTimeMillis());
             Campaign campaign = new Campaign(0L,1,campaignRequest.getDescription(),false,now,now,
@@ -435,8 +448,10 @@ public class BookieServiceImpl implements BookieService {
                     name,
                     campaignRequest.getCtaLink(),
                     campaignRequest.getHeader(),
-                    campaignRequest.getSubHeader());
+                    campaignRequest.getSubHeader(),expiryDate);
             campaignRepository.save(campaign);
+            AgentActivity agentActivity = new AgentActivity(0L,"Created campaign " + campaign.getId(),"n/a",now,user.getId());
+            agentActivityRepository.save(agentActivity);
             return new GlobalResponse(null,true,false, "Campaign uploaded successfully" );
         }catch (Exception e){
             log.error("upload error {}", e.getMessage());
@@ -574,6 +589,7 @@ public class BookieServiceImpl implements BookieService {
                 Campaign exists = campaign.get();
                 exists.setDescription(campaignRequest.getDescription());
                 exists.setDispatchDate(appUtils.parseDate(campaignRequest.getActionDay()));
+                exists.setExpiryDate(appUtils.parseDate(campaignRequest.getExpiryDay()));
                 exists.setCta(campaignRequest.getCta());
                 exists.setLang(campaignRequest.getLang());
                 exists.setStatus(campaignRequest.getStatus().equals("active"));
@@ -605,11 +621,17 @@ public class BookieServiceImpl implements BookieService {
 
     @Override
     @Transactional(transactionManager = "apiDbTransactionManager")
-    public GlobalResponse getJackpotBets(Pageable pageable, String code, String country) {
+    public GlobalResponse getJackpotBets(Pageable pageable, String code, String country, String type, String to, String from) {
+        Timestamp timestampFrom = appUtils.startOfDayTimestamp(from);
+        Timestamp timestampEnd = appUtils.endOfDayTimestamp(to);
+        if(type.equalsIgnoreCase("landing")){
+            timestampFrom = appUtils.startOfToday();
+            timestampEnd = appUtils.getBurundiTime();
+        }
         Page<Bet> paginatedBets = null;
         log.info("Getting all jackpots {}", code);
         if(code.equalsIgnoreCase("all")){
-            paginatedBets = betRepository.getPaginatedJackpotBets("jackpot",pageable);
+            paginatedBets = betRepository.getPaginatedJackpotBets("jackpot",timestampFrom,timestampEnd,pageable);
         }else{
             paginatedBets = betRepository.findByBetCode(country,code, pageable);
         }

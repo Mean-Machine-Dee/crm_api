@@ -2,7 +2,7 @@ package com.crm.api.api.repository;
 
 import com.crm.api.api.models.Customer;
 import com.crm.api.api.models.Friend;
-import com.crm.api.crm.models.User;
+import com.crm.api.dtos.AffiliateSerializer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,9 +14,9 @@ import java.util.List;
 
 @Repository
 public interface FriendRepository extends JpaRepository<Friend, Long> {
-   @Query(value = "SELECT A.* FROM users A left join `friends` B on A.`id` = B.`invite` where B.`created_at` between ?1 and ?2", nativeQuery = true)
-    Page<Customer> findByCountryAndDate(Timestamp start, Timestamp finish, String country, Pageable pageable);
+   @Query(value = "SELECT A.id,A.phone,A.iso,A.created_at FROM `users` A left join `friends` B on A.`id` = B.`invite` where A.`iso` = ?1 and B.`created_at` between ?2 and ?3 order by B.created_at", nativeQuery = true)
+    Page<AffiliateSerializer> findByCountryAndDate(String country, Timestamp start, Timestamp finish, Pageable pageable);
 
-    @Query(value = "SELECT * FROM friends WHERE invite = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM friends WHERE invite = ?1 ORDER BY created_at DESC", nativeQuery = true)
     List<Friend> getAllInvitees(Long id);
 }

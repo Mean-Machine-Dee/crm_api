@@ -81,6 +81,11 @@ public class CustomerController {
         return customerService.getUserBets(id, pageable);
     }
 
+    @PatchMapping("client/bets/{id}")
+    public GlobalResponse cancelBet(@PathVariable("id") long id){
+        return customerService.cancelBet(id);
+    }
+
 
     @PostMapping("client/c2b")
     public GlobalResponse deposit(@RequestBody DepositRequest depositRequest, Principal principal){
@@ -94,8 +99,8 @@ public class CustomerController {
     }
 
     @PostMapping("client/profile")
-    public GlobalResponse profile( @RequestBody ProfileRequest request){
-        return customerService.profile(request);
+    public GlobalResponse profile( @RequestBody ProfileRequest request,Principal principal){
+        return customerService.profile(request,principal);
     }
 
 
@@ -127,8 +132,8 @@ public class CustomerController {
     }
 
     @PutMapping("user/{id}")
-    public GlobalResponse verifyUser(@PathVariable(name = "id") long id){
-        return customerService.verifyClient(id);
+    public GlobalResponse verifyUser(@PathVariable(name = "id") long id, Principal principal){
+        return customerService.verifyClient(id, principal);
     }
 
     @PostMapping("settle/bulk")
@@ -140,10 +145,7 @@ public class CustomerController {
         if(filename == null || !filename.toLowerCase().endsWith(".csv")){
             return new GlobalResponse(null, false,true,"Upload csv file");
         }
-
         return customerService.settleBulk(file,type);
-
-
     }
 
 
@@ -156,10 +158,7 @@ public class CustomerController {
         if(filename == null || !filename.toLowerCase().endsWith(".csv")){
             return new GlobalResponse(null, false,true,"Upload csv file");
         }
-
         return customerService.bulkDeposit(file);
-
-
     }
 
     @GetMapping("agents")
@@ -167,6 +166,14 @@ public class CustomerController {
         Pageable pageable = PageRequest.of(page,size, Sort.by("created_at").descending());
         return customerService.agentsData(pageable);
     }
+
+    @GetMapping("agents/{id}")
+    public GlobalResponse agentData(@PathVariable(name = "id") int id,@RequestParam(name = "page") int page, @RequestParam(name = "size") int size){
+        Pageable pageable = PageRequest.of(page,size, Sort.by("created_at").descending());
+        return customerService.agentsViewData(id,pageable);
+    }
+
+
 
     @GetMapping("players")
     public GlobalResponse players(@RequestParam(name = "category") String category,@RequestParam(name = "country") String country, HttpServletResponse response){
@@ -191,8 +198,8 @@ public class CustomerController {
     }
 
     @GetMapping("unlock/user/{id}")
-    public GlobalResponse unlock(@PathVariable(name = "id") Long id,@RequestParam(name = "type") String type){
-        return customerService.unlock(id,type);
+    public GlobalResponse unlock(@PathVariable(name = "id") Long id,@RequestParam(name = "type") String type,Principal principal){
+        return customerService.unlock(id,type,principal.getName());
     }
 
 

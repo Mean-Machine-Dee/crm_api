@@ -31,6 +31,7 @@ public class Bet {
     private String betCode;
     private String account;
     private Timestamp bet_placed;
+    private Timestamp cancelled_date;
     private Timestamp deleted_at;
     @Column(name = "is_review")
     private boolean isReview;

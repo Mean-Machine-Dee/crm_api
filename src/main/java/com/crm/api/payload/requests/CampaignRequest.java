@@ -18,4 +18,5 @@ public class CampaignRequest {
     private String ctaLink;
     private String status;
     private String subHeader;
+    private String expiryDay;
 }

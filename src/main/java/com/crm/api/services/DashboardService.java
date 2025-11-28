@@ -25,4 +25,10 @@ public interface DashboardService {
     GlobalResponse getSignUps(String country, String from, String to);
 
     GlobalResponse getSignUpsByCountry(String country);
+
+    GlobalResponse getBarChart(String currency);
+
+    GlobalResponse getAreaChart(String currency);
+
+    GlobalResponse getPieChart(String currency);
 }

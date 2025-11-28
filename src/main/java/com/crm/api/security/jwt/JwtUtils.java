@@ -12,6 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import java.security.Key;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -30,13 +34,22 @@ public class JwtUtils {
 
 
     public String generateJwtToken(Authentication authentication) {
-        appUtils.getBurundiTime() + jwtExpirationMs;
+
+
+        // Define a specific time zone
+        ZoneId bj = ZoneId.of("Africa/Bujumbura");
+        LocalDateTime localDateTime = LocalDateTime.now(bj).plusHours(5);
+        Instant instant = localDateTime.atZone(bj).toInstant();
+        Date expiryDate = Date.from(instant);
+        logger.info("Expires at {}", expiryDate);
+
+
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
         return Jwts.builder()
                 .setSubject((userPrincipal.getEmail()))
                 .setIssuedAt(new Date())
-                .setExpiration(expirationDate)
+                .setExpiration(expiryDate)
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }

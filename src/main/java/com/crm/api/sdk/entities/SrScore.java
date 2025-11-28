@@ -1,5 +1,6 @@
 package com.crm.api.sdk.entities;
 
+import com.crm.api.api.models.Picks;
 import lombok.*;
 
 import javax.persistence.*;
@@ -16,6 +17,7 @@ public class SrScore {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sr_competition_id;
     private String scores;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "sr_competition_id", insertable = false,updatable = false)
     private SrCompetition competition;

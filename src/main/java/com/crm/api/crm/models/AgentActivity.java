@@ -15,11 +15,11 @@ import java.sql.Timestamp;
 public class AgentActivity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     private String description;
-    private String system;
-    private String type;
     private String phone;
     @Column(name = "created_at")
     private Timestamp createdAt;
+    @Column(name = "agent_id")
+    private long agentId;
 }

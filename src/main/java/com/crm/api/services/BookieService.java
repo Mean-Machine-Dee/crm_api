@@ -9,12 +9,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
+
 public interface BookieService {
     GlobalResponse searchTournament(TournamentSearchRequest tournament, Pageable pageable);
 
     GlobalResponse highlightGames(TournamentRequest tournamentRequest);
 
-    GlobalResponse bets(Pageable pageable, String code, String country);
+    GlobalResponse bets(Pageable pageable, String code, String country, String type, String to, String from);
 
     GlobalResponse tournaments(Pageable pageable,String country);
 
@@ -40,7 +42,7 @@ public interface BookieService {
 
     GlobalResponse setPayments(PaymentSettingRequest paymentSettingRequest);
 
-    GlobalResponse createCampaign(MultipartFile file, CampaignRequest campaignRequest);
+    GlobalResponse createCampaign(MultipartFile file, CampaignRequest campaignRequest, Principal principal);
 
     GlobalResponse activate(long id, String status);
 
@@ -60,7 +62,7 @@ public interface BookieService {
 
     GlobalResponse highlightSingleGame(long id, int priority);
 
-    GlobalResponse getJackpotBets(Pageable pageable, String code,String country);
+    GlobalResponse getJackpotBets(Pageable pageable, String code, String country, String type, String to, String from);
 
     GlobalResponse jackpots();
 

@@ -4,6 +4,8 @@ import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
 import org.springframework.data.domain.Pageable;
 
+import java.security.Principal;
+
 public interface FinanceService {
     GlobalResponse search(PaymentsSearchRequest search);
 
@@ -13,13 +15,13 @@ public interface FinanceService {
 
     GlobalResponse filterLona(LonaRequest lonaRequest, Pageable pageable);
 
-    GlobalResponse lonaTaxes(LonaRequest lonaRequest, String type);
+    GlobalResponse lonaTaxes(LonaRequest lonaRequest);
 
     GlobalResponse remit(RemitDate remitDate);
 
     GlobalResponse remitted(Pageable pageable);
 
-    GlobalResponse setSettings(SettingRequest request);
+    GlobalResponse setSettings(SettingRequest request, Principal principal);
 
 
     GlobalResponse getAppCounter();

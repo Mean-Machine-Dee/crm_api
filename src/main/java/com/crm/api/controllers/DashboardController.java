@@ -86,6 +86,21 @@ public class DashboardController {
     }
 
 
+    @GetMapping("barchart")
+    public GlobalResponse getBarChart(@RequestParam(name = "currency") String currency){
+        return dashboardService.getBarChart(currency);
+    }
+
+    @GetMapping("areachart")
+    public GlobalResponse getAreaChart(@RequestParam(name = "currency") String currency){
+        return dashboardService.getAreaChart(currency);
+    }
+
+    @GetMapping("piechart")
+    public GlobalResponse getPieChart(@RequestParam(name = "currency") String currency){
+        return dashboardService.getPieChart(currency);
+    }
+
 
 
 }

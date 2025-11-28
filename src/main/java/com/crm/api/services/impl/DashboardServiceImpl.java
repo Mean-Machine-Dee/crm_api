@@ -8,6 +8,7 @@ import com.crm.api.crm.models.Dispatch;
 import com.crm.api.crm.models.User;
 import com.crm.api.crm.repository.DispatchRepository;
 import com.crm.api.crm.repository.UserRepository;
+import com.crm.api.dtos.ChartData;
 import com.crm.api.payload.requests.DispatchRequest;
 import com.crm.api.payload.response.GlobalResponse;
 import com.crm.api.services.DashboardService;
@@ -19,11 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
+import java.sql.Array;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -92,8 +91,8 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<String, Object> getPayments(String iso, Timestamp timestampStart, Timestamp timestampStop) {
 
         System.out.println("FROM " + timestampStart + " start " +timestampStop);
-        List<Withdrawals> withdrawals = withdrawRepository.getWithdrawals(iso,timestampStart,timestampStop);
         String currency = appUtils.getCurrency(iso);
+        List<Withdrawals> withdrawals = withdrawRepository.getWithdrawals(currency,timestampStart,timestampStop);
         List<Deposit> deposits = depositRepository.getDeposits(currency,timestampStart,timestampStop);
         double depositedAmount = 0;
         double paidOut = 0;
@@ -127,10 +126,20 @@ public class DashboardServiceImpl implements DashboardService {
         }
         Map<String,Object> response = new HashMap<>();
         response.put("payments",getPayments(country,timestampStart,timestampStop));
+        response.put("jackpots", getActiveJackpots());
         response.put("signups", getTodaysSignups(country,timestampStart,timestampStop));
         response.put("bets",getTodayBets(country,timestampStart,timestampStop));
         response.put("recentDeposits",getTodayDeposits(country,timestampStart,timestampStop));
         return new GlobalResponse(response,true,false,"aggregation");
+    }
+
+    private int getActiveJackpots() {
+        Integer jackpots = betRepository.getJackpots("jackpot");
+        if(jackpots == null){
+            return 0;
+        }
+
+        return jackpots;
     }
 
     private Object getTodayDeposits(String country, Timestamp timestampStart, Timestamp timestampStop) {
@@ -235,6 +244,32 @@ public class DashboardServiceImpl implements DashboardService {
     public GlobalResponse getSignUpsByCountry(String country) {
         Long customers = customerRepository.findCustomersByCountry(country);
         return new GlobalResponse(customers,true,false,"All time customers");
+    }
+
+    @Override
+    public GlobalResponse getBarChart(String currency) {
+        Map<String,ChartData> dataMap = new HashMap<>();
+        ChartData deposits = new ChartData();
+        deposits.setName("Deposit");
+        deposits.setData(Arrays.asList(44, 55, 57, 56, 61, 58, 63, 60, 66));
+
+        ChartData withdrawals = new ChartData();
+        withdrawals.setName("WithDrawals");
+        withdrawals.setData(Arrays.asList(76, 85, 101, 98, 87, 105, 91, 114, 94));
+        dataMap.put("deposits",deposits);
+        dataMap.put("withDrawals",withdrawals);
+
+        return new GlobalResponse(dataMap,true,false,"Chart Data");
+    }
+
+    @Override
+    public GlobalResponse getAreaChart(String currency) {
+        return null;
+    }
+
+    @Override
+    public GlobalResponse getPieChart(String currency) {
+        return null;
     }
 
 

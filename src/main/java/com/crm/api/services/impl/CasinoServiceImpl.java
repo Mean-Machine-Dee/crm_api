@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -61,18 +62,33 @@ public class CasinoServiceImpl implements CasinoService {
     public GlobalResponse getUserCasinos(long id, String provider, Pageable pageable) {
         if(provider.equalsIgnoreCase("plagmatic")){
             Page<Plagmatic> plagmatics = plagmaticRepository.findByUserBets(id, pageable);
-            List<CasinoDTO> casinoDTOS = formatPlagmatics(plagmatics);
-            return new GlobalResponse(casinoDTOS,true,false,"User Bets");
+            if (!plagmatics.isEmpty()){
+                List<CasinoDTO> casinoDTOS = formatPlagmatics(plagmatics);
+                Map<String, Object> mapped = appUtils.dataFormatter(casinoDTOS, plagmatics.getNumber(), plagmatics.getTotalElements(), plagmatics.getTotalPages());
+                return new GlobalResponse(mapped,true,false,"User Bets");
+            }
+
         }else if(provider.equalsIgnoreCase("jetx")){
             Page<JetX> jetXES = jetXRepository.findByUser(id, pageable);
-            List<CasinoDTO> casinoDTOS = formatJetX(jetXES);
-            return new GlobalResponse(casinoDTOS,true,false,"User Bets");
+            if (!jetXES.isEmpty()){
+                List<CasinoDTO> casinoDTOS = formatJetX(jetXES);
+                Map<String, Object> mapped = appUtils.dataFormatter(casinoDTOS, jetXES.getNumber(), jetXES.getTotalElements(), jetXES.getTotalPages());
+                return new GlobalResponse(mapped,true,false,"User Bets");
+            }
+
         }else{
             Page<Aviatrix> aviatrixes = aviatrixRepository.findByUserBet(id, pageable);
+            if (!aviatrixes.isEmpty()){
+                List<CasinoDTO> casinoDTOS = formatAviatrix(aviatrixes);
+                Map<String, Object> mapped = appUtils.dataFormatter(casinoDTOS, aviatrixes.getNumber(), aviatrixes.getTotalElements(), aviatrixes.getTotalPages());
+                return new GlobalResponse(mapped,true,false,"User Bets");
+            }
+
             List<CasinoDTO> casinoDTOS = formatAviatrix(aviatrixes);
             return new GlobalResponse(casinoDTOS,true,false,"User Bets");
 
         }
+        return new GlobalResponse(null,false,true,"No User Bets");
     }
 
 
@@ -129,11 +145,12 @@ public class CasinoServiceImpl implements CasinoService {
     private List<CasinoDTO> formatPlagmatics(Page<Plagmatic> plagmatics) {
         return plagmatics.getContent().stream()
                 .map(plagmatic -> new CasinoDTO("Plagmatic",
-                        plagmatic.getGameId(),plagmatic.getAmount(),
-                        plagmatic.getAmountWon()/100,plagmatic.getStatus(), plagmatic.getWon(),
-                        plagmatic.getCreatedAt(),plagmatic.getResultedAt(), 1.0,
-                        "BIF",plagmatic.getUserId()))
+                        plagmatic.getGameId(), plagmatic.getAmount(),
+                        plagmatic.getAmountWon() / 100, plagmatic.getStatus(), plagmatic.getWon(),
+                        plagmatic.getCreatedAt(), plagmatic.getResultedAt(), 1.0,
+                        "BIF", plagmatic.getUserId()))
                 .collect(Collectors.toList());
+
 
     }
 

@@ -13,7 +13,7 @@ import java.util.List;
 
 @Repository
 public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
-    @Query(value="SELECT * FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3",nativeQuery = true)
+    @Query(value="SELECT * FROM payments WHERE currency = ?1 AND trans_date between ?2 AND ?3",nativeQuery = true)
     List<Withdrawals> getWithdrawals(String iso,Timestamp startOfToday, Timestamp stop);
 
 

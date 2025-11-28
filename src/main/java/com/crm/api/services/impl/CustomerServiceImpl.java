@@ -9,10 +9,12 @@ import com.crm.api.crm.repository.TicketRepository;
 import com.crm.api.crm.repository.UserRepository;
 import com.crm.api.dtos.ActivityDTO;
 import com.crm.api.dtos.CustomerDTO;
-import com.crm.api.dtos.PlayersOnly;
+import com.crm.api.dtos.PickDto;
 import com.crm.api.dtos.TicketDTO;
 import com.crm.api.payload.requests.*;
 import com.crm.api.payload.response.GlobalResponse;
+import com.crm.api.sdk.entities.SrScore;
+import com.crm.api.sdk.repositories.SrScoreRepository;
 import com.crm.api.services.CustomerService;
 import com.crm.api.services.WalletService;
 import com.crm.api.utils.AppUtils;
@@ -50,6 +52,9 @@ public class CustomerServiceImpl implements CustomerService {
     private Logger logger = LoggerFactory.getLogger(CustomerServiceImpl.class);
 
     @Autowired
+    private WalletService walletService;
+
+    @Autowired
     BetRepository betRepository;
 
     AppUtils appUtils = new AppUtils();
@@ -63,6 +68,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Autowired
     PicksRepository picksRepository;
+
+    @Autowired
+    SrScoreRepository srScoreRepository;
 
 
     @Autowired
@@ -88,8 +96,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
-    WalletService walletService;
+
 
     @Autowired
     TicketRepository ticketRepository;
@@ -355,14 +362,29 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Transactional
     @Override
-    public GlobalResponse profile(ProfileRequest request) {
+    public GlobalResponse profile(ProfileRequest request, Principal principal) {
+        User user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
         Customer customer = customerRepository.findById(request.getId());
         if (customer != null) {
+            String action = "";
             Account account = accountRepository.findByOwnerId(customer.getId());
             account.setBlocked(request.isCanBet());
             account.setBlock_withdraw(request.isCanWithdraw());
             logger.info("acc {}", account);
             accountRepository.save(account);
+
+            if(request.isCanBet() && request.isCanWithdraw()){
+                action = "Allowed betting for and Withdrawal" + account.getName();
+            }else if(!request.isCanBet()) {
+                action = "Disabled betting for " + account.getName();
+            }
+            if(!request.isCanWithdraw()){
+                action = "Disabled withdrawal for " + account.getName();
+            }
+
+            AgentActivity agentActivity = new AgentActivity(0L,action,account.getName(),new Timestamp(System.currentTimeMillis()), user.getId());
+            logger.info("Activity is {}",agentActivity);
+            agentActivityRepository.save(agentActivity);
             return new GlobalResponse(null, true, false, "profile updated");
         }
         return new GlobalResponse(null, false, true, "user not found");
@@ -376,7 +398,7 @@ public class CustomerServiceImpl implements CustomerService {
             Timestamp now = new Timestamp(System.currentTimeMillis());
             Ticket ticket = new Ticket(0L, ticketDTO.getName(), "open", ticketDTO.getDescription(), ticketDTO.getPhone(), ticketDTO.getIssueType(), user.getId(), now, now);
             ticketRepository.save(ticket);
-            AgentActivity activity = new AgentActivity(0L,ticketDTO.getDescription(),"crm","Ticket Creation", "00000000",new Timestamp(System.currentTimeMillis()));
+            AgentActivity activity = new AgentActivity(0L,ticketDTO.getDescription(), "00000000",new Timestamp(System.currentTimeMillis()), user.getId());
             agentActivityRepository.save(activity);
             return new GlobalResponse(ticket, true, false, "Ticket created successfully");
         } catch (Exception e) {
@@ -438,15 +460,35 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public GlobalResponse getBetPicks(int id) {
         List<Picks> picks = picksRepository.getPicks((long) id);
-        return new GlobalResponse(picks, true, false, "Picks");
+        List<PickDto> pickDtos = new ArrayList<>();
+        for(Picks pick: picks){
+            SrScore score = srScoreRepository.findByCompetitionId(pick.getSr_competition_id());
+            PickDto dto = PickDto.builder()
+                    .name(pick.getName())
+                    .score(score == null ? "n/a": score.getScores())
+                    .odds(pick.getOdds())
+                    .market_name(pick.getMarket_name())
+                    .pick(pick.getPick())
+                    .pick_name(pick.getPick_name())
+                    .voided(pick.isVoided())
+                    .status(pick.isStatus())
+                    .won(pick.isWon())
+                    .resulted(pick.isResulted())
+                    .deleted_at(pick.getDeleted_at())
+                    .sr_competition_id(pick.getSr_competition_id())
+                    .build();
+            pickDtos.add(dto);
+        }
+        return new GlobalResponse(pickDtos, true, false, "Picks");
     }
 
     @Override
-    public GlobalResponse verifyClient(long id) {
+    public GlobalResponse verifyClient(long id, Principal principal) {
+        User user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
         Customer customer = customerRepository.findCustomerId(id);
         customer.setVerified(true);
         customerRepository.save(customer);
-        AgentActivity activity = new AgentActivity(0L,"Verified users " + customer.getPhone(),"crm","Verification", customer.getPhone(),new Timestamp(System.currentTimeMillis()));
+        AgentActivity activity = new AgentActivity(0L,"Verified users " + customer.getPhone(), customer.getPhone(),new Timestamp(System.currentTimeMillis()),user.getId());
         agentActivityRepository.save(activity);
         return new GlobalResponse(null, true, false, "Account verified");
     }
@@ -509,8 +551,8 @@ public class CustomerServiceImpl implements CustomerService {
     private void settleBets(List<String> betCodes) {
      for(String code: betCodes){
          Bet bet = betRepository.findByBetCode(code);
-         if(bet != null){
-             Customer customer = customerRepository.findById(bet.getUserId());
+         if(bet != null && !bet.isStatus() && bet.getDeleted_at() == null){
+//             Customer customer = customerRepository.findById(bet.getUserId());
              double payout = bet.getPayout();
              bet.setStatus(true);
              bet.setWon(true);
@@ -582,10 +624,13 @@ public class CustomerServiceImpl implements CustomerService {
                 for (String[] record : records) {
                     String phoneNumber = record[0];
                     String amount = record[2];
+
+                    logger.info("Deposit {} and {}",phoneNumber,amount);
                     if(phoneNumber != null && amount != null){
                         clientDeposit.put(phoneNumber, amount);
                     }
                 }
+
                 // settleBets(betCodes);
             } catch (IOException | CsvException e) {
                 logger.info("Service interrupted by::: {}", e.getMessage());
@@ -672,7 +717,8 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
     @Override
-    public GlobalResponse unlock(Long id, String type) {
+    public GlobalResponse unlock(Long id, String type,String username) {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
         Account account = accountRepository.findByOwnerId(id);
         if(account != null){
             if(type.equalsIgnoreCase("betting")){
@@ -681,9 +727,37 @@ public class CustomerServiceImpl implements CustomerService {
                 account.setBlock_withdraw(false);
             }
             accountRepository.save(account);
+            String action = "Blocked User " + account.getName();
+
+            AgentActivity agentActivity = new AgentActivity(0L,action,"n/a",new Timestamp(System.currentTimeMillis()), user.getId());
+            logger.info("AgentActivity is {}",agentActivity);
+            agentActivityRepository.save(agentActivity);
             return new GlobalResponse(null,true,false,"user blocked successfully");
         }
         return new GlobalResponse(null,false,true,"No user found");
+    }
+
+    @Override
+    public GlobalResponse cancelBet(long id) {
+        Optional<Bet> bet = betRepository.findById(id);
+        if(bet.isPresent() && !bet.get().isStatus()){
+            Bet present = bet.get();
+            present.setDeleted_at(appUtils.getBurundiTime());
+            present.setWon(false);
+            present.setStatus(true);
+            present.setCancelled_date(appUtils.getBurundiTime());
+            betRepository.save(present);
+            walletService.creditCustomer(present.getAmount(),bet.get().getUserId());
+            return new GlobalResponse(null,true,false,"Bet cancelled successfully");
+        }
+        return new GlobalResponse(null,false,true,"Bet Not Found");
+    }
+
+    @Override
+    public GlobalResponse agentsViewData(long id, Pageable pageable) {
+        Page<AgentActivity> activities = agentActivityRepository.findByAgentId(id, pageable);
+        Map<String, Object> stringObjectMap = appUtils.dataFormatter(activities.get(), activities.getNumber(), activities.getTotalElements(), activities.getTotalPages());
+        return new GlobalResponse(stringObjectMap,true,false,"Agent Data");
     }
 
     private String getSportFromId(String id) {

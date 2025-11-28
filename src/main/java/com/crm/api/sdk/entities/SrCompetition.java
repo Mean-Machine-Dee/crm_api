@@ -68,7 +68,4 @@ public class SrCompetition {
     private SrScore scores;
 
 
-
-//    @OneToOne(mappedBy = "score")
-//    private SrScore score;
 }

@@ -23,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
+
 
 @Slf4j
 @RestController
@@ -71,20 +73,26 @@ public class BookieController {
     public GlobalResponse bets(@RequestParam(name = "page",defaultValue = "0") int page,
                                @RequestParam(name = "size", defaultValue = "15") int size,
                                @RequestParam(name = "code",defaultValue = "all") String code,
-                               @RequestParam(name = "country",defaultValue = "BI") String country
+                               @RequestParam(name = "country",defaultValue = "BI") String country,
+                               @RequestParam(name = "type", defaultValue = "landing") String type,
+                               @RequestParam(name = "to", defaultValue = "0") String to,
+                               @RequestParam(name = "from", defaultValue = "0") String from
                                ){
         Pageable pageable = PageRequest.of(page,size);
-        return bookieService.bets(pageable,code,country);
+        return bookieService.bets(pageable,code,country,type,to,from);
     }
 
     @GetMapping("jackpot/bets")
     public GlobalResponse jackpotBets(@RequestParam(name = "page",defaultValue = "0") int page,
                                @RequestParam(name = "size", defaultValue = "15") int size,
                                @RequestParam(name = "code",defaultValue = "all") String code,
-                               @RequestParam(name = "country",defaultValue = "BI") String country
+                               @RequestParam(name = "country",defaultValue = "BI") String country,
+                                      @RequestParam(name = "type", defaultValue = "landing") String type,
+                                      @RequestParam(name = "to", defaultValue = "0") String to,
+                                      @RequestParam(name = "from", defaultValue = "0") String from
                                       ){
         Pageable pageable = PageRequest.of(page,size);
-        return bookieService.getJackpotBets(pageable,code,country);
+        return bookieService.getJackpotBets(pageable,code,country,type,to,from);
     }
 
 //    @PostMapping("search/bet/{code}")
@@ -204,9 +212,9 @@ public class BookieController {
     }
 
     @PostMapping(value = "campaign")
-    public GlobalResponse createCampaign(@RequestParam("file") MultipartFile file, @RequestParam("model") CampaignRequest campaignRequest){
+    public GlobalResponse createCampaign(@RequestParam("file") MultipartFile file, @RequestParam("model") CampaignRequest campaignRequest, Principal principal){
        log.info("Campaign is {}", campaignRequest);
-         return bookieService.createCampaign(file,campaignRequest);
+         return bookieService.createCampaign(file,campaignRequest, principal);
 
     }
 

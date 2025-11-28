@@ -1,10 +1,11 @@
 package com.crm.api.services.impl;
 
 import com.crm.api.api.models.*;
-import com.crm.api.api.repository.BetRepository;
-import com.crm.api.api.repository.DepositRepository;
-import com.crm.api.api.repository.FriendRepository;
-import com.crm.api.api.repository.WithdrawRepository;
+import com.crm.api.api.repository.*;
+import com.crm.api.crm.models.Jackpot;
+import com.crm.api.crm.repository.JackpotRepository;
+import com.crm.api.dtos.AffiliateDepositDTO;
+import com.crm.api.dtos.AffiliateSerializer;
 import com.crm.api.payload.requests.LonaRequest;
 import com.crm.api.payload.response.GlobalResponse;
 import com.crm.api.services.ReportService;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,11 @@ public class ReportServiceImpl implements ReportService {
     private BetRepository betRepository;
 
 
+
+    @Autowired
+    private JackpotRepository jackpotRepository;
+
+
     @Autowired
     private DepositRepository depositRepository;
 
@@ -40,6 +47,9 @@ public class ReportServiceImpl implements ReportService {
     @Autowired
     private WithdrawRepository withdrawRepository;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
     private AppUtils appUtils = new AppUtils();
 
     @Override
@@ -47,11 +57,11 @@ public class ReportServiceImpl implements ReportService {
         Timestamp from = appUtils.startOfDayTimestamp(reportRequest.getFrom());
         Timestamp to = appUtils.endOfDayTimestamp(reportRequest.getTo());
         GlobalResponse globalResponse;
-        Double deposits = depositRepository.findTotalBetween(from,to);
-        Double withdrawals = withdrawRepository.findTotalBetween(from,to);
-
-            List<Bet> bets = betRepository.getBetsByDate(from, to);
-            globalResponse = reportResponse(bets,deposits,withdrawals);
+        String currency = appUtils.getCurrency(reportRequest.getCountry());
+        Double deposits = depositRepository.findByCurrency(currency,from,to);
+        Double withdrawals = withdrawRepository.findByCurrency(currency,from,to);
+        List<Bet> bets = betRepository.getBetsByDateIso(reportRequest.getCountry(),from, to);
+        globalResponse = reportResponse(bets,deposits,withdrawals);
 
         return globalResponse;
     }
@@ -85,22 +95,42 @@ public class ReportServiceImpl implements ReportService {
             start = appUtils.minusDays(1);
             finish = appUtils.startOfToday();
         }
-        Page<Customer> friends = friendRepository.findByCountryAndDate(start,finish,country,pageable);
-        Map<String, List<Customer>> data = friends.getContent().stream().collect(Collectors.groupingBy(Customer::getIso));
-        return new GlobalResponse(data, true,false, "Data");
+        Page<AffiliateSerializer> friends = friendRepository.findByCountryAndDate(country,start,finish,pageable);
+//        Map<String, List<AffiliateSerializer>> data = friends.getContent().stream().collect(Collectors.groupingBy(AffiliateSerializer::getIso));
+        Map<String, Object> dataFormatter = appUtils.dataFormatter(friends.getContent(), friends.getNumber(), friends.getTotalElements(), friends.getTotalPages());
+        return new GlobalResponse(dataFormatter, true,false, "Data");
     }
 
     @Override
     public GlobalResponse getAffiliate(Long id) {
+
         List<Friend> friendList = friendRepository.getAllInvitees(id);
-        Map<String,Double> list = new HashMap<>();
+        log.info("User Id {} xxx {}", id,friendList);
+        List<AffiliateDepositDTO> depositDTOS = new ArrayList<>();
         for (Friend friend: friendList){
             Deposit deposit = depositRepository.getFirstDeposit(friend.getInvitee());
+            Customer customer = customerRepository.getByUserId(friend.getInvitee());
             if(deposit != null){
-                list.put(deposit.getPhone(),deposit.getAmount());
+                AffiliateDepositDTO dto = new AffiliateDepositDTO(customer.getPhone(),friend.getInvitee(), (int) deposit.getAmount(), (int) (0.1 *  deposit.getAmount()),deposit.getDate_deposited(),friend.getInvite(),true);
+                depositDTOS.add(dto);
+            }else{
+              depositDTOS.add(new AffiliateDepositDTO(customer.getPhone(),friend.getInvitee(), 0, 0,null,friend.getInvite(),false));
             }
         }
-        return new GlobalResponse(list, true,false, "Data");
+        return new GlobalResponse(depositDTOS, true,false, "Data");
+    }
+
+    @Override
+    public GlobalResponse getJackpotReport() {
+        Jackpot jackpot = jackpotRepository.findByActive();
+        Map<String,Object> response = new HashMap<>();
+        if(jackpot != null){
+            List<Bet> bets = betRepository.findByJackpotId(jackpot.getId());
+            Map<String, Object> betReports = betReport(bets);
+            response.put("data",betReports);
+            return new GlobalResponse(response, true,false, "jackpot data");
+        }
+        return new GlobalResponse(response, false,true, "No active jackpot");
     }
 
     private GlobalResponse providerCollection(List<Deposit> deposits, List<Withdrawals> withdrawals) {

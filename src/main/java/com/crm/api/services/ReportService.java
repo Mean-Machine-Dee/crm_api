@@ -12,4 +12,6 @@ public interface ReportService {
     GlobalResponse getAffiliates(String from, String to, String type, Pageable pageable, String country);
 
     GlobalResponse getAffiliate(Long id);
+
+    GlobalResponse getJackpotReport();
 }

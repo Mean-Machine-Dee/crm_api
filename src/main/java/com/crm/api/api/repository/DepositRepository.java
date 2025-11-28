@@ -28,7 +28,7 @@ public interface DepositRepository extends JpaRepository<Deposit,Long> {
     Double findByDateBetween(Timestamp start, Timestamp finish);
 
     @Query(value = "SELECT SUM(`amount`) FROM deposits where telco = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
-    Integer findByTelcoBetween(String telco,Timestamp start, Timestamp finish);
+    Double findByTelcoBetween(String telco,Timestamp start, Timestamp finish);
 
     @Query(value="SELECT * FROM deposits WHERE telco = ?1 AND created_at between ?2 AND ?3 ORDER BY amount DESC LIMIT 15",nativeQuery = true)
     List<Deposit> getDepositTimeFrame(String telco,Timestamp startOfToday, Timestamp stop);
@@ -62,7 +62,7 @@ public interface DepositRepository extends JpaRepository<Deposit,Long> {
    Deposit getFirstDeposit(Long id);
 
     @Query(value = "SELECT SUM(`amount`) FROM deposits where currency = ?1 AND created_at BETWEEN ?2 AND ?3", nativeQuery = true)
-    Integer getDepositCurrency(String currency, Timestamp start, Timestamp stop);
+    Double getDepositCurrency(String currency, Timestamp start, Timestamp stop);
 
 
     @Query(value = "SELECT SUM(`amount`) FROM deposits where currency = ?1", nativeQuery = true)

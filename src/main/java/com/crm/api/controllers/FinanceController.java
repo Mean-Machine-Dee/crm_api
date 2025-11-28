@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/finance/")
@@ -39,14 +41,15 @@ public class FinanceController{
 
     @PostMapping("lona/bets")
     public GlobalResponse getBets(@RequestBody LonaRequest lonaRequest,@RequestParam(value = "page",defaultValue = "0") int page,
-                                  @RequestParam(value = "size", defaultValue = "15") int size){
+                                  @RequestParam(value = "size", defaultValue = "15") int size
+    ){
         Pageable pageable = PageRequest.of(page,size);
         return financeService.filterLona(lonaRequest,pageable);
     }
 
     @PostMapping("lona/taxes")
-    public GlobalResponse getTaxes(@RequestBody LonaRequest lonaRequest, @RequestParam(name = "type", defaultValue = "landing") String type){
-        return financeService.lonaTaxes(lonaRequest,type);
+    public GlobalResponse getTaxes(@RequestBody LonaRequest lonaRequest){
+        return financeService.lonaTaxes(lonaRequest);
     }
 
     @PostMapping("pay/bills")
@@ -69,8 +72,8 @@ public class FinanceController{
     }
 
     @PostMapping("settings")
-    public GlobalResponse setting(@RequestBody SettingRequest request){
-        return financeService.setSettings(request);
+    public GlobalResponse setting(@RequestBody SettingRequest request, Principal principal){
+        return financeService.setSettings(request,principal);
     }
 
 

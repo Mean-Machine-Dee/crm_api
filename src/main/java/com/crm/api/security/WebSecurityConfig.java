@@ -95,6 +95,7 @@ public class WebSecurityConfig {
                                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                                 .antMatchers(SWAGGER_WHITELIST).permitAll()
                                 .antMatchers("/api/test/**").permitAll()
+                                .antMatchers(HttpMethod.GET,"/api/crm/settle/bulk/**").permitAll()
                                 .antMatchers(HttpMethod.GET,"/api/bookie/slides/image/**").permitAll()
                                 .anyRequest().authenticated()
                 );
