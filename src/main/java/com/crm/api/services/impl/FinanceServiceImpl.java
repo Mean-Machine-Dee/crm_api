@@ -22,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -352,9 +355,15 @@ public class FinanceServiceImpl implements FinanceService {
 
             request.setCurrency("BIF");
             request.setProvider("lumicash");
-            log.info("Transfer {}", request);
+
             String json = objectMapper.writeValueAsString(request);
-            String response = restTemplate.postForObject(Constants.TRANSFER_URL, json, String.class);
+            log.info("Transfer {} XXXX {}", request,json);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+// Wrap the object in an HttpEntity to attach headers and the body
+            HttpEntity<DirectTransferRequest> requestEntity = new HttpEntity<>(request, headers);
+            String response = restTemplate.postForObject(Constants.TRANSFER_URL, requestEntity, String.class);
             log.info("Direct Transfer response {}",response);
             return new GlobalResponse(response, true,false,"Withdrawal successfull");
         } catch (JsonProcessingException e) {

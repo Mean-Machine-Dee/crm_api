@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 
 @Slf4j
@@ -32,7 +33,7 @@ public class WebConfig {
         @Override
         public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
             // Modify request here
-            log.info("Intercepted request {} == {} == {}", request.getURI(),request.getHeaders());
+            log.info("Intercepted request {} == {} == {}", request.getURI(),request.getHeaders(), Arrays.toString(body));
             ClientHttpResponse response = execution.execute(request, body);
             // Modify response here
             log.info("Intercepted response {} == {} == {}", response.getStatusText(),response.getStatusText(),response.getBody());

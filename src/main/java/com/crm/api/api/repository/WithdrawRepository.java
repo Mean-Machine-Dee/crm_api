@@ -32,7 +32,7 @@ public interface WithdrawRepository extends JpaRepository<Withdrawals, Long> {
     @Query(value = "SELECT SUM(`amount`) FROM payments where telco = ?1 AND trans_date BETWEEN ?2 AND ?3", nativeQuery = true)
     Double findByTelcoBetween(String name, Timestamp start, Timestamp finish);
 
-    @Query(value="SELECT * FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3 ORDER BY amount ASC LIMIT 15",nativeQuery = true)
+    @Query(value="SELECT * FROM payments WHERE telco = ?1 AND trans_date between ?2 AND ?3 ORDER BY id DESC LIMIT 40",nativeQuery = true)
     List<Withdrawals> getWithdrawalTimeFrame(String prsp,Timestamp startOfToday, Timestamp stop);
 
     @Query(value="SELECT * FROM payments WHERE currency = ?1 and trans_date between ?2 AND ?3 ",nativeQuery = true)
