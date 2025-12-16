@@ -56,6 +56,13 @@ public class AppUtils {
         return Timestamp.valueOf(today.atStartOfDay());
     }
 
+
+    public Timestamp startOfTodayPlus(int hours) {
+        ZoneId zoneId = ZoneId.of( "Africa/Bujumbura" ) ;
+        LocalDate today = LocalDate.now(zoneId);
+        return Timestamp.valueOf(today.atStartOfDay().plusHours(hours));
+    }
+
     public Timestamp minusDays(int days) {
         ZoneId zoneId = ZoneId.of( "Africa/Bujumbura" ) ;
         LocalDateTime today = LocalDateTime.now(zoneId);
