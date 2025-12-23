@@ -10,9 +10,9 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public interface LonaRepository extends JpaRepository<Lona,Long> {
-    @Query(value="SELECT * FROM lona WHERE created_at between ?1 AND ?2 ORDER BY CREATED_AT DESC",nativeQuery = true)
+    @Query(value="SELECT * FROM lona WHERE resulted_at between ?1 AND ?2 ORDER BY CREATED_AT DESC",nativeQuery = true)
     Page<Lona> filterBets(Timestamp start, Timestamp finish, Pageable pageable);
 
-    @Query(value="SELECT * FROM lona WHERE created_at between ?1 AND ?2 ORDER BY CREATED_AT DESC",nativeQuery = true)
+    @Query(value="SELECT * FROM lona WHERE resulted_at between ?1 AND ?2 ORDER BY CREATED_AT DESC",nativeQuery = true)
     List<Lona> filterBetRequests(Timestamp start, Timestamp finish);
 }
