@@ -198,8 +198,8 @@ public class FinanceServiceImpl implements FinanceService {
         Timestamp start = appUtils.startOfDayTimestamp(lonaRequest.getFrom());
         Timestamp finish = appUtils.endOfDayTimestamp(lonaRequest.getTo());
         if(lonaRequest.getType().equalsIgnoreCase("landing")){
-           start = appUtils.minusDays(1);
-           finish = appUtils.startOfToday();
+           start = appUtils.startOfToday();
+           finish = appUtils.getBurundiTime();
         }
 
         double excise = 0;
